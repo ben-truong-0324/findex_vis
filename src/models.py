@@ -65,68 +65,64 @@ class SimpleNN(nn.Module):
         return self.layers[-1](x)  # No activation or dropout on the output layer
 
 
-class FarsightMPL(nn.Module):
-    def __init__(self, input_dim, output_dim, dropout_rate=0.5):
-        super(FarsightMPL, self).__init__()
-        self.layers = nn.ModuleList()
-        self.layers.append(nn.Linear(input_dim, 75))
-        self.layers.append(nn.Linear(75, output_dim))
+class NNMPL(nn.Module):
+    def __init__(self, input_dim, output_dim, hidden_dim=2048, dropout_rate=0.1):
+        super(NNMPL, self).__init__()
+        # self.layers = nn.ModuleList()
+        # self.layers.append(nn.Linear(input_dim, 75))
+        # self.layers.append(nn.Linear(75, output_dim))
         self.dropout = nn.Dropout(dropout_rate)
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim // 2)
+        self.fc3 = nn.Linear(hidden_dim // 2, hidden_dim // 4)
+        self.fc4 = nn.Linear(hidden_dim // 4, output_dim)
 
     def forward(self, x):
-        x = torch.relu(self.layers[0](x))  # First Linear layer
+        x = torch.relu(self.fc1(x))
         x = self.dropout(x)
-        x =self.layers[1](x)
-        
-        return x
-
-
-class FarsightCNN(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_dim=289, feature_maps=19, dropout_rate=0.5):
-        super(FarsightCNN, self).__init__()
+        x = torch.relu(self.fc2(x))
+        x = self.dropout(x)
+        x = torch.relu(self.fc3(x))
+        x = self.dropout(x)
+        return self.fc4(x)
+    
+class NNCNN(nn.Module):
+    def __init__(self, input_dim, output_dim, kernel_size, hidden_dim, dropout_rate):
+        super(NNCNN, self).__init__()
+        self.conv1 = nn.Conv1d(input_dim, hidden_dim, kernel_size=kernel_size, padding=kernel_size//2)
+        self.pool = nn.MaxPool1d(kernel_size=2)
+        self.fc1 = nn.Linear(hidden_dim * (input_dim // 2), hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, output_dim)
+        self.relu = nn.ReLU()
         self.dropout = nn.Dropout(dropout_rate)
-        self.layers = nn.ModuleList()
-        self.layers.append(nn.Linear(input_dim, hidden_dim))
-        self.layers.append(nn.Conv2d(in_channels=1, out_channels=feature_maps, kernel_size=3, stride=1, padding=0))
-        self.layers.append(nn.Linear(feature_maps * 15 * 15, output_dim))
 
     def forward(self, x):
-        for i, layer in enumerate(self.layers[:-1]):
-            if isinstance(layer, nn.Conv2d):
-                # Reshape the input to match Conv2d's expected input
-                #x = x.view(-1, 1, int(289**0.5), int(289**0.5))
-                x = x.view(x.size(0), 1, 17, 17)  # Batch size, Channels, Height, Width
-            x = torch.relu(layer(x))
-            x = self.dropout(x)  # Apply dropout after each hidden layer
-        #x = torch.flatten(x, 1)  # lfatten for fully connected layer
-        x = x.view(x.size(0), -1)  # Flatten to [batch_size, num_features]
-        return self.layers[-1](x)
+        x = self.relu(self.conv1(x))
+        x = self.pool(x)
+        x = x.view(x.size(0), -1)  # Flatten the tensor for fully connected layers
+        x = self.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = self.fc2(x)
+        return x
     
  
     
-class FarsightLSTM(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_dim=289, lstm_hidden_dim=300, dropout_rate=0.1):
-        super(FarsightLSTM, self).__init__()
-        self.dropout = nn.Dropout(dropout_rate)
-        self.layers = nn.ModuleList()
-        self.layers.append(nn.Linear(input_dim, hidden_dim))
-        self.layers.append(nn.LSTM(hidden_dim, lstm_hidden_dim, batch_first=True))
-        self.layers.append(nn.Linear(lstm_hidden_dim, output_dim))
+class NNLSTM(nn.Module):
+    def __init__(self, input_dim, output_dim, hidden_dim, num_layers, dropout_rate):
+        super(NNLSTM, self).__init__()
+        self.lstm = nn.LSTM(input_dim, hidden_dim, num_layers, batch_first=True, dropout=dropout_rate)
+        self.fc = nn.Linear(hidden_dim, output_dim)
 
     def forward(self, x):
-        x = torch.relu(self.layers[0](x))  # First Linear layer
-        x = self.dropout(x)
-        x = x.unsqueeze(1)
-        lstm_out, _ = self.layers[1](x)  # LSTM returns (output, (hidden_state, cell_state))
-        x = torch.relu(lstm_out[:, -1, :]) 
-        x = self.dropout(x)
-        return self.layers[-1](x)
+        lstm_out, _ = self.lstm(x)
+        output = self.fc(lstm_out[:, -1, :])  # Use the last output of the LSTM for regression
+        return output
 
 
     
-class FarsightBiLSTM(nn.Module):
+class NNBiLSTM(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_dim=289, lstm_hidden_dim=150, dropout_rate=0.5):
-        super(FarsightBiLSTM, self).__init__()
+        super(NNBiLSTM, self).__init__()
         self.layers = nn.ModuleList()
         self.layers.append(nn.Linear(input_dim, hidden_dim))
         self.layers.append(nn.LSTM(hidden_dim, lstm_hidden_dim, batch_first=True, bidirectional=True))
@@ -148,9 +144,9 @@ class FarsightBiLSTM(nn.Module):
     
 
 
-class FarsightConvLSTM(nn.Module):
+class NNConvLSTM(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_dim=289, feature_maps=19, lstm_hidden_dim=300, dropout_rate=0.5):
-        super(FarsightConvLSTM, self).__init__()
+        super(NNConvLSTM, self).__init__()
         self.layers = nn.ModuleList()
         self.layers = nn.ModuleList()
         self.layers.append(nn.Linear(input_dim, hidden_dim))

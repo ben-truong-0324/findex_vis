@@ -40,18 +40,16 @@ from sklearn.metrics import confusion_matrix,precision_score, \
                         recall_score,classification_report, \
                         accuracy_score, f1_score, log_loss, \
                        confusion_matrix, ConfusionMatrixDisplay,\
-                          roc_auc_score, matthews_corrcoef, average_precision_score
+                          roc_auc_score, matthews_corrcoef, average_precision_score, \
+                          mean_squared_error, mean_absolute_error, r2_score
 from sklearn.cluster import KMeans, AgglomerativeClustering,DBSCAN,Birch,MeanShift, SpectralClustering
 from sklearn.mixture import GaussianMixture
-from sklearn.model_selection import ParameterSampler
-from sklearn.metrics import classification_report
+from sklearn.model_selection import ParameterSampler, KFold
 #import dimension reduction modules
 from sklearn.decomposition import PCA, FastICA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.random_projection import GaussianRandomProjection, SparseRandomProjection
 
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import KFold
 
 
 from torch import nn, optim
@@ -61,12 +59,10 @@ from torch.utils.data import DataLoader, TensorDataset
 import pickle
 import numpy as np
 import pandas as pd
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, HistGradientBoostingRegressor
-from sklearn.ensemble import BaggingRegressor, GradientBoostingRegressor
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
+from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, HistGradientBoostingRegressor, BaggingRegressor, GradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier, ExtraTreesClassifier, HistGradientBoostingClassifier, BaggingClassifier
+from sklearn.model_selection import GridSearchCV, train_test_split
 
 
 def train_nn_with_early_stopping_with_param(X_train, y_train, X_test, y_test, params, max_epochs, patience, model_name="default"):
@@ -84,22 +80,22 @@ def train_nn_with_early_stopping_with_param(X_train, y_train, X_test, y_test, pa
     if model_name == "default":
         model = SimpleNN(input_dim, output_dim, hidden_layers, dropout_rate=dropout_rate).to(device)
     elif model_name == "MPL":
-        model = FarsightMPL(input_dim=input_dim, output_dim=output_dim).to(device)
+        model = NNMPL(input_dim=input_dim, output_dim=output_dim).to(device)
     elif model_name == "CNN":
-        model = FarsightCNN(input_dim=input_dim, output_dim=output_dim,hidden_dim=289, feature_maps=19, dropout_rate=params['dropout_rate']).to(device)
+        model = NNCNN(input_dim=input_dim, output_dim=output_dim,hidden_dim=289, feature_maps=19, dropout_rate=params['dropout_rate']).to(device)
 
     elif model_name == "LSTM":
-        model = FarsightLSTM(input_dim=input_dim, output_dim=output_dim,hidden_dim=289, lstm_hidden_dim=300, dropout_rate=params['dropout_rate']).to(device)
+        model = NNLSTM(input_dim=input_dim, output_dim=output_dim,hidden_dim=289, lstm_hidden_dim=300, dropout_rate=params['dropout_rate']).to(device)
 
     elif model_name == "bi-LSTM":
-        model = FarsightBiLSTM(input_dim=input_dim, output_dim=output_dim,  hidden_dim=289, lstm_hidden_dim=150, dropout_rate=params['dropout_rate']).to(device)
+        model = NNBiLSTM(input_dim=input_dim, output_dim=output_dim,  hidden_dim=289, lstm_hidden_dim=150, dropout_rate=params['dropout_rate']).to(device)
 
     elif model_name == "conv-LSTM":
-        model = FarsightConvLSTM(input_dim=input_dim, output_dim=output_dim,  hidden_dim=289, feature_maps=19, lstm_hidden_dim=300, dropout_rate=params['dropout_rate']).to(device)
+        model = NNConvLSTM(input_dim=input_dim, output_dim=output_dim,  hidden_dim=289, feature_maps=19, lstm_hidden_dim=300, dropout_rate=params['dropout_rate']).to(device)
 
     else:
         raise ValueError(f"Unsupported model type: {model_name}")
-    # model = FarsightMPL(input_dim, output_dim, dropout_rate).to(device)
+    # model = NNMPL(input_dim, output_dim, dropout_rate).to(device)
 
 
 
@@ -330,18 +326,18 @@ def get_eval_with_nn(X,y,nn_performance_path,cv_losses_outpath, y_pred_outpath, 
                     best_overall_method=best_overall_method,    # Keyword argument
                     best_overall_model=best_overall_model,    # Keyword argument
                     best_overall_cv_losses = best_overall_cv_losses,
-                    type_tag=f"farsight_{model_name}",             # Keyword argument,
+                    type_tag=f"NN_{model_name}",             # Keyword argument,
                     model_name = model_name,
                 )
             nn_results[model_name] = {'mc_results': running_metrics_Xy_srx_space}
-            with open(f'{NN_PKL_OUTDIR}/farsight_best_{model_name}_hyperparam_set.pkl', 'wb') as f:
+            with open(f'{NN_PKL_OUTDIR}/NN_best_{model_name}_hyperparam_set.pkl', 'wb') as f:
                 pickle.dump(running_best_result_dict,f)
             with open(f'{Y_PRED_PKL_OUTDIR}/y_pred_best_of_{model_name}.pkl', 'wb') as f:
                 pickle.dump(running_best_y_preds,f)
             print(f"Saved results to {Y_PRED_PKL_OUTDIR}/y_pred_best_of_{model_name}.pkl")
-        with open(f'{NN_PKL_OUTDIR}/farsight_best_of_{model_name}_nn_results.pkl', 'wb') as f:
+        with open(f'{NN_PKL_OUTDIR}/NN_best_of_{model_name}_nn_results.pkl', 'wb') as f:
             pickle.dump(nn_results,f)
-        print(f"Saved results to {NN_PKL_OUTDIR}/farsight_best_of_{model_name}_nn_results.pkl")
+        print(f"Saved results to {NN_PKL_OUTDIR}/NN_best_of_{model_name}_nn_results.pkl")
 
 def evaluate_metrics_in_context(y_true, y_pred, model_name, file_path=f"{TXT_OUTDIR}/dt_model_results.txt"):
     print("Statistics for y_test (Actual values):")
@@ -449,42 +445,30 @@ def train_and_evaluate_svm(X_train, y_train, X_test, y_test):
         print(f"Accuracy: {metrics['accuracy']}\n")
 
 # Function to train and evaluate the Decision Tree Regressor with different configurations
-def train_and_evaluate_dt(X_train, y_train, X_test, y_test):
+def train_and_evaluate_dt(X_train, y_train, X_test, y_test, pred_type = "classifier"):
     
 
     # Initialize models
-    dt = DecisionTreeRegressor(random_state=GT_ID)
-    boosting = GradientBoostingRegressor(n_estimators=N_ESTIMATOR, learning_rate=0.001, random_state=GT_ID)
-    num_classes = len(y_train.unique())  # Get the number of unique classes in y_train
-    
-    # if any(X_train.dtypes == 'category'):
-    #     xgboost_model = xgb.XGBRegressor(objective="reg:squarederror",random_state=GT_ID,enable_categorical=True,num_class=num_classes)
-    # else: 
-    #     xgboost_model = xgb.XGBRegressor(objective="reg:squarederror",random_state=GT_ID,learning_rate=1, max_depth = 10,num_class=num_classes)
-    
-    rf = RandomForestRegressor(n_estimators=N_ESTIMATOR, random_state=GT_ID)
-    extra_trees = ExtraTreesRegressor(n_estimators=N_ESTIMATOR, random_state=GT_ID)
-    hist_gb = HistGradientBoostingRegressor(max_iter=N_ESTIMATOR, random_state=GT_ID)
-    svm_model = SVC(kernel='rbf', C=1, gamma='scale', random_state=42)
-    bagging = BaggingRegressor(estimator = rf, n_estimators=N_ESTIMATOR, random_state=GT_ID)
+    if pred_type == "classifier":
+        dt = DecisionTreeClassifier(random_state=GT_ID)
+        boosting = GradientBoostingClassifier(n_estimators=N_ESTIMATOR, learning_rate=0.001, random_state=GT_ID)
+        rf = RandomForestClassifier(n_estimators=N_ESTIMATOR, random_state=GT_ID)
+        extra_trees = ExtraTreesClassifier(n_estimators=N_ESTIMATOR, random_state=GT_ID)
+        hist_gb = HistGradientBoostingClassifier(max_iter=N_ESTIMATOR, random_state=GT_ID)
+        svm_model = SVC(kernel='rbf', C=1, gamma='scale', random_state=42)  # No change needed, it's already a classifier
+        bagging = BaggingClassifier(estimator=rf, n_estimators=N_ESTIMATOR, random_state=GT_ID)
+    else:
+        dt = DecisionTreeRegressor(random_state=GT_ID)
+        boosting = GradientBoostingRegressor(n_estimators=N_ESTIMATOR, learning_rate=0.001, random_state=GT_ID)
+        rf = RandomForestRegressor(n_estimators=N_ESTIMATOR, random_state=GT_ID)
+        extra_trees = ExtraTreesRegressor(n_estimators=N_ESTIMATOR, random_state=GT_ID)
+        hist_gb = HistGradientBoostingRegressor(max_iter=N_ESTIMATOR, random_state=GT_ID)
+        svm_model = SVC(kernel='rbf', C=1, gamma='scale', random_state=42)
+        bagging = BaggingRegressor(estimator = rf, n_estimators=N_ESTIMATOR, random_state=GT_ID)
 
-    # if any(X_train.dtypes == 'category'):
-    #     xgb_class = XGBClassifier(
-    #         objective="multi:softmax",
-    #         learning_rate=0.11651199016626823,
-    #         max_depth=16,
-    #         n_estimators=75,
-    #         random_state=GT_ID,
-    #         enable_categorical=True,
-    #     )
-    # else:
-    #     xgb_class = XGBClassifier(
-    #         objective="multi:softmax",
-    #         learning_rate=0.11651199016626823,
-    #         max_depth=16,
-    #         n_estimators=75,
-    #         random_state=GT_ID,
-    #     )
+    
+
+   
     param_grid = {  'max_depth': [3, 5, 10],
                     'min_samples_split': [2, 5],
                     'min_samples_leaf': [1, 2]}
@@ -508,7 +492,7 @@ def train_and_evaluate_dt(X_train, y_train, X_test, y_test):
     # smote = SMOTE(sampling_strategy='auto', random_state=42)
     # X_train, y_train = smote.fit_resample(X_train, y_train)
     for model_name, model in models.items():
-        print(model)
+        print(model,model_name)
         start_time = time.time()
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
@@ -518,50 +502,85 @@ def train_and_evaluate_dt(X_train, y_train, X_test, y_test):
         if np.any(np.isnan(y_pred)):
             print("Warning: NaN values found in y_pred")
 
-        mse = mean_squared_error(y_test, y_pred)
-        mae = mean_absolute_error(y_test, y_pred)
-        r2 = r2_score(y_test, y_pred)
-        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-        rmlse = np.sqrt(mean_squared_error(np.log1p(y_test), np.log1p(y_pred)))
-        model_params = model.get_params() if hasattr(model, 'get_params') else None
-
-        results[model_name] = {
-            "MSE": mse,
-            "MAE": mae,
-            "RMSE": rmse,
-            "RMLSE": rmlse,
-            "R2": r2,
-            "runtime": time.time() - start_time,
-            'params': model_params,
-        }
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         model_path = os.path.join(
             MODELS_OUTDIR,
             f"{model_name}_{timestamp}.joblib"
         )
+        print(len(np.unique(y_test)))
+
+        if PRED_TYPE == "classifier":
+            metric_average = 'binary' if len(np.unique(y_test)) == 2 else 'weighted'
+            accuracy = accuracy_score(y_test, y_pred)
+            precision = precision_score(y_test, y_pred, average=metric_average)  
+            recall = recall_score(y_test, y_pred, average=metric_average)  
+            f1 = f1_score(y_test, y_pred, average=metric_average)  
+            roc_auc = roc_auc_score(y_test, y_pred) if len(np.unique(y_test)) == 2 else 0  
+            model_params = model.get_params() if hasattr(model, 'get_params') else 0
+            results[model_name] = {
+                "Accuracy": accuracy,
+                "Precision": precision,
+                "Recall": recall,
+                "F1_score": f1,
+                "ROC_AUC": roc_auc,
+                "runtime": time.time() - start_time,
+                'params': model_params,
+            }
+            log_entry = (
+                f"Model: {model_name}\n"  # Ensure this is properly indented
+                f"Saved Path: {model_path}\n"
+                f"Timestamp: {timestamp}\n"
+                f"Accuracy: {results[model_name]['Accuracy']:.4f}\n"
+                f"Precision: {results[model_name]['Precision']:.4f}\n"
+                f"Recall: {results[model_name]['Recall']:.4f}\n"
+                f"F1 Score: {results[model_name]['F1_score']:.4f}\n"
+                f"ROC AUC: {results[model_name]['ROC_AUC']:.4f}\n"
+                f"Runtime: {results[model_name]['runtime']:.2f} seconds\n"
+                f"Model Hyperparameters: {model_params}\n"
+                f"{'#' * 50}\n"
+            )
+        else:
+            mse = mean_squared_error(y_test, y_pred)
+            mae = mean_absolute_error(y_test, y_pred)
+            r2 = r2_score(y_test, y_pred)
+            rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+            rmlse = np.sqrt(mean_squared_error(np.log1p(y_test), np.log1p(y_pred)))
+            model_params = model.get_params() if hasattr(model, 'get_params') else None
+
+            results[model_name] = {
+                "MSE": mse,
+                "MAE": mae,
+                "RMSE": rmse,
+                "RMLSE": rmlse,
+                "R2": r2,
+                "runtime": time.time() - start_time,
+                'params': model_params,
+            }
+            log_entry = (
+                f"Model: {model_name}\n"
+                f"Saved Path: {model_path}\n"
+                f"Timestamp: {timestamp}\n"
+                f"MSE: {results[model_name]['MSE']:.4f}\n"
+                f"MAE: {results[model_name]['MAE']:.4f}\n"
+                f"RMSE: {results[model_name]['RMSE']:.4f}\n"
+                f"RMLSE: {results[model_name]['RMLSE']:.4f}\n"
+                f"R2: {results[model_name]['R2']:.4f}\n"
+                f"Runtime: {results[model_name]['runtime']:.2f} seconds\n"
+                f"Model Hyperparameters: {model_params}\n"  
+                f"{'#' * 50}\n"
+            )
+        
         # joblib.dump(model, model_path)
         # print(f"Model {model_name} saved at {model_path}")
-        log_entry = (
-            f"Model: {model_name}\n"
-            f"Saved Path: {model_path}\n"
-            f"Timestamp: {timestamp}\n"
-            f"MSE: {results[model_name]['MSE']:.4f}\n"
-            f"MAE: {results[model_name]['MAE']:.4f}\n"
-            f"RMSE: {results[model_name]['RMSE']:.4f}\n"
-            f"RMLSE: {results[model_name]['RMLSE']:.4f}\n"
-            f"R2: {results[model_name]['R2']:.4f}\n"
-            f"Runtime: {results[model_name]['runtime']:.2f} seconds\n"
-            f"Model Hyperparameters: {model_params}\n"  
-            f"{'#' * 50}\n"
-        )
+        
         # Append the log entry to the text file
         with open(MODEL_ALL_LOG_FILE, "a") as log_file:
             log_file.write(log_entry)
         ###############
         # evaluate_metrics_in_context(y_test, y_pred, model_name)
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        if len(y_test) > 10000:
-            random_indices = np.random.choice(len(y_test), 10000, replace=False)
+        if len(y_test) > 50000:
+            random_indices = np.random.choice(len(y_test), 50000, replace=False)
             try:
                 y_test_subset = pd.Series(y_test).iloc[random_indices]
                 y_pred_subset = pd.Series(y_pred).iloc[random_indices]
@@ -570,8 +589,8 @@ def train_and_evaluate_dt(X_train, y_train, X_test, y_test):
                 print("Type of y_pred:", type(y_pred))
                 print(e)
             plots.plot_predictions( y_test_subset, y_pred_subset,1, model_name,
-                    f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_diff_{model_name}_first10k.png",
-                    f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_hist_{model_name}_first10k.png")
+                    f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_diff_{model_name}_first50k.png",
+                    f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_hist_{model_name}_first50k.png")
         else:
             plots.plot_predictions( y_test, y_pred,1, model_name,
                     f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_diff_{model_name}.png",
@@ -579,23 +598,25 @@ def train_and_evaluate_dt(X_train, y_train, X_test, y_test):
     return results
 
 # Function to train and evaluate the Decision Tree Regressor with different configurations
-def train_and_evaluate_mpl(X,y):
+def train_and_evaluate_mpl_classification(X,y):
     # Initialize models
     results = {}
     X = torch.FloatTensor(X.values)
-    y = torch.FloatTensor(y)
+    y = torch.FloatTensor(y.values)
     for model_name in EVAL_REG_MODELS:
         model_start_time = time.time()
-        best_cv_perfs, best_params,best_eval_func, best_models_ensemble = reg_hyperparameter_tuning(X,y, device, model_name,1)
+        best_cv_perfs, best_params,best_eval_func, best_models_ensemble = label_hyperparameter_tuning(X,y, device, model_name,1)
         results[model_name] = {
-            "MSE": best_cv_perfs['MSE'],  
-            "MAE": best_cv_perfs['MAE'],  
-            "RMSE": best_cv_perfs['RMSE'],  
-            "R2": best_cv_perfs['R2'],  
-            "All folds runtime": time.time() - model_start_time,  
+            "Accuracy": best_cv_perfs['Accuracy'],
+            "Precision": best_cv_perfs['Precision'],
+            "Recall": best_cv_perfs['Recall'],
+            "F1": best_cv_perfs['F1'],
+            "ROC AUC": best_cv_perfs['ROC AUC'],
+            "All folds runtime": time.time() - model_start_time,
             "Per fold runtime": best_cv_perfs['runtime'],
-            "params": best_params, 
-        }
+            "params": best_params,
+    }
+
     return results
         
 
@@ -694,8 +715,8 @@ def get_solutions(X_train):
 def main(): 
     np.random.seed(GT_ID)
   
-    do_skl_train = 1
-    do_torch_train = 0
+    do_skl_train = 0
+    do_torch_train = 1
     start_time = time.time()
     print("hello world")
     X,y,X_train, X_test, y_train, y_test  = check_etl()
@@ -706,17 +727,16 @@ def main():
     print("hello")
     if do_skl_train:
         print("starting skl models")
-        
         results_dt = train_and_evaluate_dt(X_train, y_train, X_test, y_test)
         save_results(results_dt, f"{Y_PRED_OUTDIR}/dt_results.pkl")
-        # results_svm = train_and_evaluate_svm(X_train, y_train, X_test, y_test)
-        # save_results(results_svm, f"{Y_PRED_OUTDIR}/svm_results.pkl")
+      
         
     ####### Torch models (just MPL for now)
     if do_torch_train:
+        print("starting torch models")
         mpl_result_save_file = f"{Y_PRED_OUTDIR}/mpl_results.pkl"
         # if not os.path.exists(mpl_result_save_file) or os.path.exists(mpl_result_save_file):
-        results = train_and_evaluate_mpl(X,y)
+        results = train_and_evaluate_mpl_classification(X,y)
         save_results(results, f"{Y_PRED_OUTDIR}/mpl_results.pkl")
         
     ######## for kaggle - done training, now infer to solutions.csv

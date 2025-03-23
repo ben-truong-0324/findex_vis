@@ -4,8 +4,9 @@ channels:
   - nvidia
   - defaults
 dependencies:
+  - python=3.10
   - pytorch
-  # - pytorch-cuda=12.4
+  - pytorch-cuda=12.4
   - nose
   - numpy
   - pandas

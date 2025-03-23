@@ -282,7 +282,154 @@ def check_data_info(X, y, X_train, X_test, y_train, y_test, show = False):
         if isinstance(y_test, (pd.Series, pd.DataFrame)):
             check_dataframe_info(y_test, 'y_test')
 
+def train_nn_early_stop_classification(X_train, y_train, X_test, y_test, device,params_dict ,criterion, model_name="default"):
+    input_dim = X_train.shape[1]
+    output_dim = 1  
+    unique_classes = y_train.unique()  
+    n_classes = len(unique_classes)
 
+    if n_classes == 2:
+        criterion = nn.BCEWithLogitsLoss()  # for binary classification
+    else:
+        criterion = nn.CrossEntropyLoss()
+   
+    max_epochs = 30
+    patience = 5
+    # Create DataLoaders for training and testing
+    train_dataset = TensorDataset(torch.FloatTensor(X_train), torch.FloatTensor(y_train))
+    test_dataset = TensorDataset(torch.FloatTensor(X_test), torch.FloatTensor(y_test))
+    batch_size = params_dict.get('batch_size', 256)  # Default batch size if not specified
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+    if model_name == "MPL":
+        model = NNMPL(
+            input_dim,
+            output_dim,
+            hidden_dim=params_dict['hidden_dim'],
+            dropout_rate=params_dict['dropout_rate']
+        ).to(device)
+    elif model_name == "LSTM":
+        model = NNLSTM(input_dim, output_dim, hidden_dim=params_dict['hidden_dim'], num_layers=1, dropout_rate=params_dict['dropout_rate']).to(device)
+    elif model_name == "BiLSTM":
+        model = NNBiLSTM(input_dim, output_dim,hidden_dim=289, lstm_hidden_dim=150,dropout_rate=params_dict['dropout_rate']).to(device)
+    elif model_name == "CNN":
+        model = NNCNN(input_dim, output_dim, kernel_size=2, hidden_dim=params_dict['hidden_dim'], dropout_rate=params_dict['dropout_rate']).to(device)
+   
+    else:
+        raise ValueError(f"Unsupported model type: {model_name}")
+    optimizer = optim.Adam(model.parameters(), lr=params_dict['lr'], weight_decay=params_dict['weight_decay'])
+
+
+    best_loss = float("inf")
+    patience_counter = 0
+    epoch_losses = []
+    
+    start_time = time.time()
+    for epoch in range(max_epochs):
+        print(f"Start of epoch {epoch}")
+        epoch_start_time = time.time() 
+        model.train()
+        train_epoch_loss = 0.0
+        for batch_idx, (batch_X, batch_y) in enumerate(train_loader):
+            batch_X, batch_y = batch_X.to(device), batch_y.to(device)
+            optimizer.zero_grad()
+            outputs_train = model(batch_X).squeeze()
+
+            train_loss = criterion(outputs_train, batch_y)
+            train_loss.backward()
+            optimizer.step()
+            train_epoch_loss += train_loss.item() * len(batch_X)  # Accumulate loss
+            
+           
+        # Average train loss for the epoch
+        train_epoch_loss /= len(train_loader.dataset)
+
+        # Evaluate on test set
+        model.eval()
+        eval_epoch_loss = 0.0
+        eval_predictions = []
+        eval_labels = []
+        with torch.no_grad():
+            for batch_idx, (batch_X, batch_y) in enumerate(test_loader):
+                batch_X, batch_y = batch_X.to(device), batch_y.to(device)
+                outputs_eval = model(batch_X).squeeze()
+                eval_loss = criterion(outputs_eval, batch_y)
+                eval_epoch_loss += eval_loss.item() * len(batch_X)
+                if criterion == nn.BCEWithLogitsLoss():
+                    predictions = torch.sigmoid(outputs_eval) > 0.5  # Threshold at 0.5 for binary
+                    predictions = predictions.long() 
+                else:
+                    if outputs_eval.ndimension() == 2:  # Check if it's multi-class (batch_size, num_classes)
+                        _, predictions = torch.max(outputs_eval, dim=1)  # Get the class index with max logit
+                    else:
+                        # If it’s not multi-class, treat it as binary (this should not happen)
+                        predictions = torch.sigmoid(outputs_eval) > 0.5
+                        predictions = predictions.long() 
+                
+                
+        # Average eval loss for the epoch
+        eval_epoch_loss /= len(test_loader.dataset)
+        epoch_losses.append((train_epoch_loss, eval_epoch_loss))
+        epoch_runtime = time.time() - epoch_start_time
+        print(f"Epoch {epoch + 1}/{max_epochs} - Train Loss: {train_epoch_loss:.4f}, Eval Loss: {eval_epoch_loss:.4f}, Runtime: {epoch_runtime:.2f} seconds")
+        
+        # Early stopping logic
+        if eval_epoch_loss < best_loss:
+            best_loss = eval_epoch_loss
+            patience_counter = 0
+            best_model_state = model.state_dict()  # Save the best model
+        else:
+            patience_counter += 1
+
+        if patience_counter >= patience:
+            print(f"Early stopping triggered at epoch {epoch + 1}")
+            break
+
+        # Store both training and evaluation losses
+        epoch_losses.append({
+            "epoch": epoch + 1,
+            "train_loss": train_loss.item(),
+            "eval_loss": eval_loss.item()
+        })
+
+    # Restore the best model
+    model.load_state_dict(best_model_state)
+    runtime = time.time() - start_time
+
+    model.eval()
+    outputs_list = []
+    with torch.no_grad():
+        for batch_X, batch_y in test_loader:
+            batch_outputs = model(batch_X.to(device))
+            outputs_list.append(batch_outputs.cpu())  # Move outputs back to CPU to free GPU memory
+    outputs = torch.cat(outputs_list, dim=0).cpu().numpy()
+
+
+    if criterion == nn.BCEWithLogitsLoss():  # Binary classification
+        predictions = (torch.sigmoid(torch.tensor(outputs)) > 0.5).int()
+        accuracy = accuracy_score(y_test, predictions)
+        precision = precision_score(y_test, predictions)
+        recall = recall_score(y_test, predictions)
+        f1 = f1_score(y_test, predictions)
+    else:  
+        if len(np.unique(outputs)) == 2:  # Check if it's multi-class (batch_size, num_classes)
+            _, predictions = torch.max(torch.tensor(outputs), dim=1)  # Get the class index with max logit
+        else:
+            # If it’s not multi-class, treat it as binary (this should not happen)
+            predictions = torch.sigmoid(torch.tensor(outputs)) > 0.5
+            predictions = predictions.int() 
+        accuracy = accuracy_score(y_test, predictions)
+        precision = precision_score(y_test, predictions, average='macro')
+        recall = recall_score(y_test, predictions, average='macro')
+        f1 = f1_score(y_test, predictions, average='macro')
+
+    if n_classes == 2:
+        roc_auc = roc_auc_score(y_test, predictions)
+    else:
+        roc_auc = 0
+        
+    return accuracy, precision, recall, f1, roc_auc, runtime, model, epoch_losses, outputs
 
 def train_nn_early_stop_regression(X_train, y_train, X_test, y_test, device,params_dict ,criterion, model_name="default"):
     input_dim = X_train.shape[1]
@@ -406,25 +553,25 @@ def train_nn_early_stop_regression(X_train, y_train, X_test, y_test, device,para
     return mse, mae, rmse, r2,rmlse, runtime, model, epoch_losses, outputs
 
 def do_plot_preds_of_fold(y_test, y_pred, model_name, fold):
-    if len(y_test) > 10000:
-        y_test = pd.Series(y_test.numpy().squeeze()) if isinstance(y_test, torch.Tensor) else pd.Series(y_test.squeeze())
-        y_pred = pd.Series(y_pred.squeeze()) if isinstance(y_pred, np.ndarray) else pd.Series(y_pred)
+    # if len(y_test) > 10000:
+    #     y_test = pd.Series(y_test.numpy().squeeze()) if isinstance(y_test, torch.Tensor) else pd.Series(y_test.squeeze())
+    #     y_pred = pd.Series(y_pred.squeeze()) if isinstance(y_pred, np.ndarray) else pd.Series(y_pred)
 
-        random_indices = np.random.choice(len(y_test), 10000, replace=False)
-        try:
-            y_test_subset = pd.Series(y_test).iloc[random_indices]
-            y_pred_subset = pd.Series(y_pred).iloc[random_indices]
-        except Exception as e:
-            print("Type of y_test:", type(y_test))
-            print("Type of y_pred:", type(y_pred))
-            print(e)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        plots.plot_predictions( y_test_subset, y_pred_subset,fold, model_name,
-                f"{AGGREGATED_OUTDIR}/{model_name}_{fold}_ypreds_first10k_{timestamp}.png")
-    else:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        plots.plot_predictions( y_test, y_pred,fold, model_name,
-                f"{AGGREGATED_OUTDIR}/{model_name}_{fold}_ypreds_{timestamp}.png")
+    #     random_indices = np.random.choice(len(y_test), 10000, replace=False)
+    #     try:
+    #         y_test_subset = pd.Series(y_test).iloc[random_indices]
+    #         y_pred_subset = pd.Series(y_pred).iloc[random_indices]
+    #     except Exception as e:
+    #         print("Type of y_test:", type(y_test))
+    #         print("Type of y_pred:", type(y_pred))
+    #         print(e)
+    #     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    #     plots.plot_predictions( y_test_subset, y_pred_subset,fold, model_name,
+    #             f"{AGGREGATED_OUTDIR}/{model_name}_{fold}_ypreds_first10k_{timestamp}.png")
+    # else:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    plots.plot_predictions( y_test, y_pred,fold, model_name,
+            f"{AGGREGATED_OUTDIR}/{model_name}_{fold}_ypreds_{timestamp}.png")
 
 def save_model_log_results(best_cv_perfs, best_params,best_eval_func,best_models_ensemble, model_name):
     print(f"Best Hyperparameters: {best_params}")
@@ -444,39 +591,33 @@ def save_model_log_results(best_cv_perfs, best_params,best_eval_func,best_models
         f"Timestamp: {timestamp}\n"
         f"Best Hyperparameters: {best_params}\n"
         f"Cross-validation Performance:\n"
-        f"    MSE: {best_cv_perfs['MSE']:.4f}\n"
-        f"    MAE: {best_cv_perfs['MAE']:.4f}\n"
-        f"    RMSE: {best_cv_perfs['RMSE']:.4f}\n"
-        f"    R2: {best_cv_perfs['R2']:.4f}\n"
+        f"    Accuracy: {best_cv_perfs['Accuracy']:.4f}\n"
+        f"    Precision: {best_cv_perfs['Precision']:.4f}\n"
+        f"    Recall: {best_cv_perfs['Recall']:.4f}\n"
+        f"    F1 Score: {best_cv_perfs['F1_score']:.4f}\n"
+        f"    ROC AUC: {best_cv_perfs['ROC_AUC']:.4f}\n"
         f"    Runtime: {best_cv_perfs['runtime']:.2f} seconds\n"
-        
         f"{'#' * 50}\n"
     )
+    
     with open(MODEL_ALL_LOG_FILE, "a") as log_file:
         log_file.write(log_entry)
 
-def reg_hyperparameter_tuning(X,y, device, model_name, do_cv=0):
+def label_hyperparameter_tuning(X,y, device, model_name, do_cv=0):
     # Define hyperparameter grid
     param_grid = {
         'hidden_dim': [
-                    #    512, 
                     1024,
-            # 512, 1024, 2048,
                        10000,
-                    #    20000
                        ],
         'dropout_rate': [
             0.001,
-                        #  .005, .05, 0.1, 
                         0,
                          ],
         'lr': [
-            # .02,
-            # .01, .005, 
             .0005, 
                .0001],
         'weight_decay': [0.0,
-                        #   0.01, 0.005
                         .001,
                           ],
     }
@@ -497,30 +638,32 @@ def reg_hyperparameter_tuning(X,y, device, model_name, do_cv=0):
                         'weight_decay': weight_decay,
                         'lr': lr
                     }
-                    criterion = nn.MSELoss(reduction='mean')
+                    criterion = nn.CrossEntropyLoss()
                     ############################# for kfold implemntation
                     avg_metrics_per_cv = {
-                        "MSE": [],
-                        "MAE": [],
-                        "RMSE": [],
-                        "R2": [],
-                        "RMLSE": [],
+                        "Accuracy": [],
+                        "Precision": [],
+                        "Recall": [],
+                        "F1 Score": [],
+                        "ROC AUC": [],
                         "runtime": []
                     }
                     cv_losses = []
                     fold_models = [] 
+                    
                     for fold_idx, (train_idx, val_idx) in enumerate(kf.split(X) if do_cv else [(range(len(X)), range(len(X)))]):
                         print(f"Starting fold {fold_idx + 1}")
                         X_train, X_val = X[train_idx], X[val_idx]
                         y_train, y_val = y[train_idx], y[val_idx]
-                        mse, mae, rmse, r2,rmlse, runtime, model, epoch_losses, outputs = train_nn_early_stop_regression(
-                                            X_train, y_train, X_val, y_val, 
-                                            device, params_dict, criterion, model_name)
-                        avg_metrics_per_cv["MSE"].append(mse)
-                        avg_metrics_per_cv["MAE"].append(mae)
-                        avg_metrics_per_cv["RMSE"].append(rmse)
-                        avg_metrics_per_cv["R2"].append(r2)
-                        avg_metrics_per_cv["RMLSE"].append(rmlse)
+                        accuracy, precision, recall, f1, roc_auc, runtime, model, epoch_losses, outputs = train_nn_early_stop_classification(
+                            X_train, y_train, X_val, y_val, device, params_dict, criterion, model_name
+                        )
+
+                        avg_metrics_per_cv["Accuracy"].append(accuracy)
+                        avg_metrics_per_cv["Precision"].append(precision)
+                        avg_metrics_per_cv["Recall"].append(recall)
+                        avg_metrics_per_cv["F1 Score"].append(f1)
+                        avg_metrics_per_cv["ROC AUC"].append(roc_auc)
                         avg_metrics_per_cv["runtime"].append(runtime)
                         #####
                         cv_losses.append(epoch_losses)
@@ -534,12 +677,12 @@ def reg_hyperparameter_tuning(X,y, device, model_name, do_cv=0):
                     for metric, values in avg_metrics_per_cv.items():
                         avg_metrics_per_cv[metric] = np.mean(values)
                     eval_metric_value = {
-                        "mse": avg_metrics_per_cv["MSE"],
-                        "mae": avg_metrics_per_cv["MAE"],
-                        "rmse": avg_metrics_per_cv["RMSE"],
-                        "rmlse": avg_metrics_per_cv["RMLSE"],
-                        "r2": avg_metrics_per_cv["R2"]
-                    }.get(EVAL_FUNC_METRIC.lower(), avg_metrics_per_cv["MAE"])  # Default to MAE if metric is undefined
+                        "accuracy": avg_metrics_per_cv["Accuracy"],
+                        "precision": avg_metrics_per_cv["Precision"],
+                        "recall": avg_metrics_per_cv["Recall"],
+                        "f1": avg_metrics_per_cv["F1 Score"],
+                        "roc_auc": avg_metrics_per_cv["ROC AUC"]
+                    }.get(EVAL_FUNC_METRIC.lower(), avg_metrics_per_cv["Accuracy"])  # Default to MAE if metric is undefined
 
                     # Compare overall performance to global best
                     if eval_metric_value > best_eval_func:
