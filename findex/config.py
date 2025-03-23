@@ -20,12 +20,13 @@ TEST_PATH = os.path.join(os.getcwd(), 'data', 'test.csv')
 PROCESSED_TEST_PATH = os.path.join(os.getcwd(), 'data', 'test_processed.csv')
 
 DATASET_SELECTION = "findex"
+PRED_TYPE = "classifier" #or "regression", "classifier"
 
 EVAL_FUNC_METRIC = 'accuracy' #'mae'  #rmse #'f1' # 'accuracy' 
 N_ESTIMATOR = 32
 TEST_SIZE = .2
 TARGET_COL = "fin7" #fin7, fin8b - criteria: <40% null rows and interesting
-UL_CLUSTER_COUNT = 7 #3, 5, 7, 12 - criteria: ~ arbitrary
+UL_CLUSTER_COUNT = 5 #3, 5, 7, 12 - criteria: ~ arbitrary
 YEAR_FILTER = 2021 #2021 - criteria: most of csv is this year
 ##############################
 TRAIN_PATH = TRAIN_PATH_2021 
@@ -55,6 +56,7 @@ PARAM_GRID = {
     # 'activation_function': just use relu
 }
 
+GRAPH_COL_NUM = 4
 
 from pathlib import Path
 def set_output_dir(path):

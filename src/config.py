@@ -16,10 +16,10 @@ def set_output_dir(outpath):
     return outpath
 
 EVAL_FUNC_METRIC = 'accuracy' #'f1' # 'accuracy' #for random srx implementation
-FARSIGHT_MODELS = [
+EVAL_CLASS_MODELS = [
     # 'default',
-# 'MPL',
-# 'CNN', 
+'MPL',
+'CNN', 
 'LSTM', 
 'bi-LSTM',
 #  'conv-LSTM', 

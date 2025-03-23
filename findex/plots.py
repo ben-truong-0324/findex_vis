@@ -106,7 +106,7 @@ def graph_feature_correlation(X_df, y, outpath):
     combined_df = pd.concat([X_df, y_df], axis=1)  # Combine X_df and y_df
 
     # Plot correlations with subplots
-    n_cols = 2
+    n_cols = GRAPH_COL_NUM
     n_rows = (len(X_df.columns) + n_cols - 1) // n_cols 
     fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(10, 16))
     axes = axes.flatten()
@@ -132,7 +132,7 @@ def graph_feature_correlation(X_df, y, outpath):
 def graph_feature_histogram(X_df, outpath):
     start_time = time.time()
     # Plot correlations with subplots
-    n_cols = 2
+    n_cols = GRAPH_COL_NUM
     n_rows = (len(X_df.columns) + n_cols - 1) // n_cols 
     fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(10, 16))
     axes = axes.flatten()
@@ -183,7 +183,7 @@ def graph_feature_boxplot(X_df, outpath):
 	# Select the necessary features and labelIndex columns
 	# Plot correlations with subplots
 	start_time = time.time()
-	n_cols = 2
+	n_cols = GRAPH_COL_NUM
 	n_rows = (len(X_df.columns) + n_cols - 1) // n_cols 
 	fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(10, 16))
 	axes = axes.flatten()
@@ -208,7 +208,7 @@ def graph_feature_violin(X_df, y, outpath):
     plot_df = pd.concat([X_df, y_series], axis=1)
 
     # Plot correlations with subplots
-    n_cols = 2
+    n_cols = GRAPH_COL_NUM
     n_rows = (len(X_df.columns) + n_cols - 1) // n_cols 
     fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(10, 16))
     axes = axes.flatten()
@@ -236,7 +236,7 @@ def graph_feature_violin(X_df, y, outpath):
 def graph_feature_cdf(X_df, outpath):
 	start_time = time.time()
 	# Plot correlations with subplots
-	n_cols = 2
+	n_cols = GRAPH_COL_NUM
 	n_rows = (len(X_df.columns) + n_cols - 1) // n_cols 
 	fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(10, 16))
 	axes = axes.flatten()
@@ -1591,7 +1591,7 @@ def plot_predictions_vs_actuals(y_test, y_pred, model_name, save_path, save_path
 
 
 
-def plot_predictions(y_val, outputs, fold_idx, model_name,save_path,save_path1):
+def plot_predictions(y_val, outputs, fold_idx, model_name,save_path):
     """
     Plot true values (y_val) vs predicted values (outputs) for the current fold.
 
@@ -1631,14 +1631,6 @@ def plot_predictions(y_val, outputs, fold_idx, model_name,save_path,save_path1):
     plt.savefig(save_path)
     plt.close()
 
-    plt.hist(y_val, bins=50, alpha=0.5, label='Actual (y_test)', color='blue')
-    plt.hist(outputs, bins=50, alpha=0.5, label='Predicted (y_pred)', color='red')
-    plt.xlabel('Target Value')
-    plt.ylabel('Frequency')
-    plt.title('Actual vs Predicted Target Distribution')
-    plt.legend()
-    plt.savefig(save_path1)
-    plt.close()
 
 import matplotlib.pyplot as plt
 
