@@ -14,6 +14,14 @@ Containerized Deployment: The entire application is containerized using Docker.
 
 ## Installation and Setup
 
+```bash
+conda env create -f environment.yml
+conda env update --file environment.yml --prune
+conda activate ml_general
+python -m findex.ml
+
+# download/copy data into ./data/
+```
 
 python -m venv venv
 source venv/bin/activate  # On Windows use: venv\Scripts\activate
