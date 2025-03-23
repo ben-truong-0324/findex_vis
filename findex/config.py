@@ -10,8 +10,8 @@ else:
 import os
 
 TRAIN_PATH_big = os.path.join(os.getcwd(), 'data', 'dataset_2025-02-24T21_33_33.716368723Z_DEFAULT_INTEGRATION_IMF.STA_FAS_1.0.1.csv')
-TRAIN_PATH_2011 = os.path.join(os.getcwd(), 'data', 'findex2011_micro_WORLD.csv')
-TRAIN_PATH_2014 = os.path.join(os.getcwd(), 'data', 'findex2014_micro_world.csv')
+# TRAIN_PATH_2011 = os.path.join(os.getcwd(), 'data', 'findex2011_micro_WORLD.csv')
+# TRAIN_PATH_2014 = os.path.join(os.getcwd(), 'data', 'findex2014_micro_world.csv') #schema mismatch, need manual patch :(
 TRAIN_PATH_2017 = os.path.join(os.getcwd(), 'data', 'findex2017_micro_world.csv')
 TRAIN_PATH_2021 = os.path.join(os.getcwd(), 'data', 'findex2021_micro_world_139countries.csv')
 
@@ -23,18 +23,18 @@ DATASET_SELECTION = "findex"
 PRED_TYPE = "classifier" #or "regression", "classifier"
 
 EVAL_FUNC_METRIC = 'accuracy' #'mae'  #rmse #'f1' # 'accuracy' 
-N_ESTIMATOR = 32
-TEST_SIZE = .2
+N_ESTIMATOR = 24
+TEST_SIZE = .3
 TARGET_COL = "fin7" #fin7, fin8b - criteria: <40% null rows and interesting
-UL_CLUSTER_COUNT = 5 #3, 5, 7, 12 - criteria: ~ arbitrary
-YEAR_FILTER = 2021 #2021 - criteria: most of csv is this year
+UL_CLUSTER_COUNT = 4 #3, 5, 7, 12 - criteria: ~ arbitrary
 ##############################
-TRAIN_PATH = TRAIN_PATH_2021 
-##############################
-ECONOMY_SAVE_PATH = os.path.join(os.getcwd(), 'data', 'economies.pkl')
-PROCESSED_TRAIN_PATH = os.path.join(os.getcwd(), 'data', f'train_processed_{TARGET_COL}_target_{UL_CLUSTER_COUNT}_clusters_{YEAR_FILTER}_year.pkl')
-DRAFT_VER_A3 = f"_{TARGET_COL}_target_{UL_CLUSTER_COUNT}_clusters_{YEAR_FILTER}_year"
+TRAIN_PATH = TRAIN_PATH_2017
+YEAR_FILTER = 2021 #2021, 2017, 2014, 2011 - criteria: use whatever year is in main name of csv
 
+##############################
+ECONOMY_SAVE_PATH = os.path.join(os.getcwd(), 'data', f'economies_survey_year{YEAR_FILTER}.pkl')
+PROCESSED_TRAIN_PATH = os.path.join(os.getcwd(), 'data', f'train_processed_{TARGET_COL}_target_{UL_CLUSTER_COUNT}_clusters_{YEAR_FILTER}_year.pkl')
+DRAFT_VER_A3 = f"_{TARGET_COL}_target_{UL_CLUSTER_COUNT}_clusters_{TEST_SIZE}_test_{YEAR_FILTER}_year"
 
 EVAL_MODELS = [
                 # 'default',
@@ -63,10 +63,9 @@ def set_output_dir(path):
     # Ensure the directory exists
     os.makedirs(path, exist_ok=True)
     return path
-# Get the root project directory (the parent directory of kaggle_housing)
+
 project_root = Path(__file__).resolve().parent.parent
-# Define the output directory path relative to the project root
-OUTPUT_DIR_A3 = project_root / 'outputs' / DATASET_SELECTION
+OUTPUT_DIR_A3 = project_root / 'outputs' 
 # Set the directories using set_output_dir
 AGGREGATED_OUTDIR = set_output_dir(OUTPUT_DIR_A3 / f'ver{DRAFT_VER_A3}_{EVAL_FUNC_METRIC}/aggregated_graphs')
 Y_PRED_OUTDIR = set_output_dir(OUTPUT_DIR_A3 / f'ver{DRAFT_VER_A3}_{EVAL_FUNC_METRIC}/y_pred_graphs')
@@ -106,6 +105,7 @@ FINDEX_DATA_DICT = {
     "fin1_1a": "Opened first account to receive a wage payment",
     "fin1_1b": "Opened first account to receive money from the government",
     "fin2": "Has a debit card",
+    "fin3": "If has debit card: card in own name",
     "fin4": "Used a debit card",
     "fin4a": "Used a debit card in-store",
     "fin5": "Used a mobile phone or internet to access account",
@@ -152,11 +152,14 @@ FINDEX_DATA_DICT = {
     "fin14c": "Paid online or in cash at delivery",
     "fin14c_2": "Paid online for an online purchase for the first time after COVID-19",
     "fin14c_2_China": "Paid online for an online purchase for the first time since 2020",
+    "fin15": "Saved in past 12 months: for farm/business purposes",
     "fin16": "Saved for old age",
     "fin17a": "Saved using an account at a financial institution",
     "fin17a1": "Saved using a mobile money account",
     "fin17b": "Saved using an informal savings club",
+    "fin19": "Has loan from a financial institution for home, apartment, or land",
     "fin20": "Borrowed for medical purposes",
+    "fin21": "Borrowed in past 12 months: for farm/business purposes",
     "fin22a": "Borrowed from a financial institution",
     "fin22b": "Borrowed from family or friends",
     "fin22c": "Borrowed from an informal savings club",
@@ -217,6 +220,94 @@ FINDEX_DATA_DICT = {
     "merchantpay_dig": "Made a digital merchant payment",
     "year": "Year"
 }
+
+FINDEX_DATA_DICT_2014 = {
+    "economy": "Economy",
+    "economycode": "Economy Code",
+    "wpid_random": "Gallup World Poll identifier",
+    "wgt": "Weight",
+    "female": "Respondent is female",
+    "age": "Respondent age",
+    "educ": "Respondent education level",
+    "inc_q": "Within-economy household income quintile",
+    "account": "Has an account",
+    "account_fin": "Has an account at a financial institution",
+    "account_mob": "Has a mobile money account",
+    "q2": "Has a debit card",
+    "q3": "If has debit card: card in own name",
+    "q4": "If has debit card: used card in past 12 months",
+    "q5": "Has a credit card",
+    "q6": "If has credit card: used card in past 12 months",
+    "q8a": "If does not have account: b/c too far away",
+    "q8b": "If does not have account: b/c too expensive",
+    "q8c": "If does not have account: b/c lack documentation",
+    "q8d": "If does not have account: b/c lack trust",
+    "q8e": "If does not have account: b/c religious reasons",
+    "q8f": "If does not have account: b/c lack of money",
+    "q8g": "If does not have account: b/c family member already has one",
+    "q8h": "If does not have account: b/c cannot get one",
+    "q8i": "If does not have account: b/c no need for financial services",
+    "q9": "If has account: any deposit into account in past 12 months",
+    "q10": "If has any deposit into account: number of monthly deposits",
+    "q11": "If has account: any withdrawal from account in past 12 months",
+    "q12": "If has any withdrawal from account: number of monthly withdrawals",
+    "q13": "If has account: most frequent mode of cash withdrawal",
+    "q14": "If has account: made a transaction using a mobile phone",
+    "q16": "Made payments online using the Internet",
+    "q17a": "Saved in past 12 months: for farm/business purposes",
+    "q17b": "Saved in past 12 months: for old age",
+    "q17c": "Saved in past 12 months: for education or school fees",
+    "q18a": "Saved in past 12 months: using an account at a financial institution",
+    "q18b": "Saved in past 12 months: using an informal savings club",
+    "q20": "Has loan from a financial institution for house, apartment, or land",
+    "q21a": "Borrowed in past 12 months: from a financial institution",
+    "q21b": "Borrowed in past 12 months: from a store (store credit)",
+    "q21c": "Borrowed in past 12 months: from family or friends",
+    "q21d": "Borrowed in past 12 months: from another private lender",
+    "q22a": "Borrowed in past 12 months: for education or school fees",
+    "q22b": "Borrowed in past 12 months: for medical purposes",
+    "q22c": "Borrowed in past 12 months: for farm/business purposes",
+    "q24": "Possibility of coming up with emergency funds",
+    "q25": "If able to come up with emergency funds: main source",
+    "q26": "Sent domestic remittances in past 12 months",
+    "q27a": "If sent domestic remittances: in cash",
+    "q27b": "If sent domestic remittances: through a financial institution",
+    "q27c": "If sent domestic remittances: through a mobile phone",
+    "q27d": "If sent domestic remittances: through an MTO",
+    "q28": "Received domestic remittances in past 12 months",
+    "q29a": "If received domestic remittances: in cash",
+    "q29b": "If received domestic remittances: through a financial institution",
+    "q29c": "If received domestic remittances: through a mobile phone",
+    "q29d": "If received domestic remittances: through an MTO",
+    "q30": "Paid utility bills in past 12 months",
+    "q31a": "If paid utility bills: in cash",
+    "q31b": "If paid utility bills: using an account",
+    "q31c": "If paid utility bills: through a mobile phone",
+    "q32": "Paid school fees in past 12 months",
+    "q33a": "If paid school fees: in cash",
+    "q33b": "If paid school fees: using an account",
+    "q33c": "If paid school fees: through a mobile phone",
+    "q34": "Received wage payments in past 12 months",
+    "q35": "If received wage payments: work in public sector",
+    "q36a": "If received wage payments: in cash",
+    "q36bc": "If received wage payments: into an account or to a card",
+    "q36d": "If received wage payments: through a mobile phone",
+    "q37": "If received cashless wage payments: account use",
+    "q38": "If received cashless wage payments: account type",
+    "q39": "Received government transfers in past 12 months",
+    "q40a": "If received government transfers: in cash",
+    "q40bc": "If received government transfers: into an account or to a card",
+    "q40d": "If received government transfers: through a mobile phone",
+    "q41": "If received cashless government transfers: account use",
+    "q42": "If received cashless government transfers: account type",
+    "q43": "Received agricultural payments in past 12 months",
+    "q44a": "If received agricultural payments: in cash",
+    "q44b": "If received agricultural payments: into an account",
+    "q44c": "If received agricultural payments: through a mobile phone",
+    "saved": "Saved in the past year",
+    "borrowed": "Borrowed in the past year"
+}
+
 MODIFIED_DATA_DICT = {key: value.lower().replace(" ", "_") for key, value in FINDEX_DATA_DICT.items()}
 # columns without null values
 COLUMNS_TO_KEEP =  [

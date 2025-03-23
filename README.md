@@ -13,6 +13,7 @@ Containerized Deployment: The entire application is containerized using Docker.
 
 
 ## Installation and Setup
+Download/copy data into ./data/
 
 ```bash
 conda env create -f environment.yml
@@ -20,29 +21,4 @@ conda env update --file environment.yml --prune
 conda activate ml_general
 python -m findex.ml
 
-# download/copy data into ./data/
 ```
-
-python -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-docker-compose up --build # or with docker
-fastapi dev main.py
-http://127.0.0.1:8000/docs
-
-
-#run app
-uvicorn app.main:app --reload
-pytest app/test.py
-
-#run docker
-docker-compose up -d --build
-docker-compose exec app pytest test/test.py
-docker-compose exec db psql --username=fastapi --dbname=fastapi_dev
-http://127.0.0.1:8000/docs
-
-#after done with venv
-deactivate
-rmdir /s /q venv #to delete venv after use

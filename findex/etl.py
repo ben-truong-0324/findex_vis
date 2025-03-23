@@ -230,10 +230,10 @@ def do_ul_cluster(X_df):
     gmm_clus = gmm.fit_predict(X_og)
     X_df['gmm_clus'] = gmm_clus
 
-    print("dbscan")
-    dbscan = DBSCAN(eps=1.0, min_samples=3)
-    dbscan_clus = dbscan.fit_predict(X_og)
-    X_df['dbscan_clus'] = dbscan_clus
+    # print("dbscan")
+    # dbscan = DBSCAN(eps=1.0, min_samples=3)
+    # dbscan_clus = dbscan.fit_predict(X_og)
+    # X_df['dbscan_clus'] = dbscan_clus
     
     # print("spec clus")
     # spectral = SpectralClustering(n_clusters=ul_cluster_count, affinity='nearest_neighbors', random_state=GT_ID)
@@ -252,11 +252,19 @@ def get_data():
                 df = pd.read_csv(TRAIN_PATH, encoding="ISO-8859-1")
                 print("Accessed .csv in data folder")
 
-                df = df[COLUMNS_TO_KEEP+[TARGET_COL] if TARGET_COL not in COLUMNS_TO_KEEP else COLUMNS_TO_KEEP ]
+                available_columns = [col for col in COLUMNS_TO_KEEP + [TARGET_COL] if col in df.columns]
+                df = df[available_columns]
+                print(df.head())
+                print("yo")
+
+                # df = df[COLUMNS_TO_KEEP+[TARGET_COL] if TARGET_COL not in COLUMNS_TO_KEEP else COLUMNS_TO_KEEP ]
                 economy_column = df['economy' ]  # Store non-numerical data for later
                 df = df.drop(columns=['economycode', 'economy']) 
                 df = df.dropna()
-                df = df[df["year"] == YEAR_FILTER] #only keep specific year for filter
+                if "year" in df.columns:
+                    df = df[df["year"] == YEAR_FILTER]
+                else:
+                    print("⚠️ Warning: 'year' column not found in DataFrame. Skipping filter.")
 
                 df["pop_adult_scaled"] = np.log1p(df["pop_adult"])  # Log scaling
                 df.drop(columns=["pop_adult"], inplace=True) 
@@ -417,14 +425,19 @@ def prelim_view(file_path, show_only_no_null=False):
             print(f"{'Column':<20} {'Type':<10} {'# Unique':<10} {'Description':<50} {'Top 3 Values (Freq)':<50} {'# Null':<10} {'# Null %':<10} ")
             print("=" * 120)
             for col in df.columns:
-                col_type = str(df[col].dtype)  # Convert dtype to string to avoid formatting issues
-                col_desc = str(FINDEX_DATA_DICT[col])
-                unique_count = df[col].nunique() if "float" not in col_type and "int" not in col_type else "Numerical"
-                top_values = df[col].value_counts().head(3)
-                top_values_str = ", ".join([f"{val} ({cnt})" for val, cnt in top_values.items()])
-                null_count = df[col].isnull().sum()
-                null_perc = 100 * df[col].isnull().sum() / df[col].shape[0]
-                print(f"{col:<20} {col_type:<10} {unique_count:<10} {col_desc:<50}  {top_values_str:<50} {null_count:<10} {null_perc:.2f}%")
+                try:
+                    col_type = str(df[col].dtype)  # Convert dtype to string to avoid formatting issues
+                    col_desc = str(FINDEX_DATA_DICT[col])
+                    unique_count = df[col].nunique() if "float" not in col_type and "int" not in col_type else "Numerical"
+                    top_values = df[col].value_counts().head(3)
+                    top_values_str = ", ".join([f"{val} ({cnt})" for val, cnt in top_values.items()])
+                    null_count = df[col].isnull().sum()
+                    null_perc = 100 * df[col].isnull().sum() / df[col].shape[0]
+                    print(f"{col:<20} {col_type:<10} {unique_count:<10} {col_desc:<50}  {top_values_str:<50} {null_count:<10} {null_perc:.2f}%")
+                except:
+                    print(f"Column {col} not in FINDEX_DATA_DICT of 2021")
+
+                
         else:
             print(f"{'Column':<20} {'Type':<10} {'# Unique':<10} {'Description':<50} {'Top 3 Values (Val: PercFreq)':<50}")
             print("=" * 120)
@@ -432,14 +445,18 @@ def prelim_view(file_path, show_only_no_null=False):
                 if df[col].isnull().sum() > 0:
                     continue
                 else:
-                    col_type = str(df[col].dtype)  # Convert dtype to string to avoid formatting issues
-                    col_desc = str(FINDEX_DATA_DICT[col])
-                    unique_count = df[col].nunique() #if "float" not in col_type and "int" not in col_type else "Numerical"
-                    top_values = df[col].value_counts().head(3)
-                    top_values_str = ", ".join([f"{val}: {100*cnt/df.shape[0]:.1f}%" for val, cnt in top_values.items()])
+                    try:
+                        col_type = str(df[col].dtype)  # Convert dtype to string to avoid formatting issues
+                        col_desc = str(FINDEX_DATA_DICT[col])
+                        unique_count = df[col].nunique() #if "float" not in col_type and "int" not in col_type else "Numerical"
+                        top_values = df[col].value_counts().head(3)
+                        top_values_str = ", ".join([f"{val}: {100*cnt/df.shape[0]:.1f}%" for val, cnt in top_values.items()])
+                        print(f"{col:<20} {col_type:<10} {unique_count:<10} {col_desc:<50} {top_values_str:<50} ")
+                    except:
+                        print(f"Column {col} not in FINDEX_DATA_DICT of 2021")
                    
                    
-                    print(f"{col:<20} {col_type:<10} {unique_count:<10} {col_desc:<50} {top_values_str:<50} ")
+                    
             # for col in df.columns:
             #     if df[col].isnull().sum() == 0:
             #         print(col)

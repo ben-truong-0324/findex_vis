@@ -17,6 +17,7 @@ from src.models_reg import *
 from findex.config import *
 import findex.plots as plots
 from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
+from sklearn.inspection import permutation_importance
 
 import joblib
 # import optuna
@@ -293,7 +294,7 @@ def train_nn_early_stop_classification(X_train, y_train, X_test, y_test, device,
     else:
         criterion = nn.CrossEntropyLoss()
    
-    max_epochs = 30
+    max_epochs = NN_MAX_EPOCH
     patience = 5
     # Create DataLoaders for training and testing
     train_dataset = TensorDataset(torch.FloatTensor(X_train), torch.FloatTensor(y_train))
@@ -440,7 +441,7 @@ def train_nn_early_stop_regression(X_train, y_train, X_test, y_test, device,para
             output_dim = y_train.shape[1]  # Number of labels
         else:
             output_dim = len(np.unique(y_train.cpu()))
-    max_epochs = 60
+    max_epochs = NN_MAX_EPOCH
     patience = 5
     # Create DataLoaders for training and testing
 
@@ -868,3 +869,101 @@ def objective(trial, X_train, y_train):
 #     # Best results
 #     print("Best Params:", study.best_params)
 #     print("Best Accuracy:", study.best_value)
+
+
+def ml_perf_eval_by_country(test_results_df, trained_models):
+    
+
+    metrics_list = []
+    metrics_list_by_cluster = []
+    feature_importance_list = []
+
+    # Extract model prediction columns (e.g., y_pred_decision_tree)
+    model_pred_cols = [col for col in test_results_df.columns if col.startswith("y_pred_")]
+
+    # Get feature columns (excluding y_test, economy_code, and model predictions)
+    feature_columns = test_results_df.drop(columns=["y_test", "economy_code"] + model_pred_cols).columns
+
+    for model_col in model_pred_cols:
+        model_name = model_col.replace("y_pred_", "")  # Extract model name
+        grouped = test_results_df.groupby("economy_code")
+
+        for cluster_method in ["km_clus", "gmm_clus" ]: #"dbscan_clus"
+            clustered = test_results_df.groupby(cluster_method)
+
+            # For each cluster in the clustering method, calculate metrics
+            for cluster_label, cluster_group in clustered:
+                y_true = cluster_group["y_test"]
+                y_pred = cluster_group[model_col]
+
+                # Compute performance metrics for each cluster
+                accuracy = accuracy_score(y_true, y_pred)
+                f1 = f1_score(y_true, y_pred, average="weighted")
+                precision = precision_score(y_true, y_pred, average="weighted", zero_division=0)
+
+                cluster_size = len(cluster_group)
+
+                metrics_list_by_cluster.append({
+                    "model": model_name,
+                    "cluster_method": cluster_method,  # Which clustering method was used
+                    "cluster_label": cluster_label,  # Label of the current cluster
+                    "cluster_size": cluster_size,  # Number of rows in this cluster
+                    "accuracy": accuracy,
+                    "f1_score": f1,
+                    "precision": precision
+                })
+
+
+        for econ_code, group in grouped:
+            y_true = group["y_test"]
+            y_pred = group[model_col]
+            X_subset = group[feature_columns]
+            econ_code_size = len(group)
+
+            # Compute performance metrics
+            accuracy = accuracy_score(y_true, y_pred)
+            f1 = f1_score(y_true, y_pred, average="weighted")
+            precision = precision_score(y_true, y_pred, average="weighted", zero_division=0)
+
+            metrics_list.append({
+                "economy_code": econ_code,
+                "econ_size": econ_code_size,
+                "model": model_name,
+                "accuracy": accuracy,
+                "f1_score": f1,
+                "precision": precision
+            })
+
+            # Compute feature importance using permutation importance
+            if model_name in trained_models:
+                model = trained_models[model_name]
+                perm_importance = permutation_importance(model, X_subset, y_true, scoring="accuracy", n_repeats=5, random_state=42)
+
+                for feature, importance in zip(feature_columns, perm_importance.importances_mean):
+                    feature_importance_list.append({
+                        "economy_code": econ_code,
+                        "model": model_name,
+                        "feature": feature,
+                        "importance": importance
+                    })
+
+    # Convert lists to DataFrames
+    metrics_df = pd.DataFrame(metrics_list)
+    feature_importance_df = pd.DataFrame(feature_importance_list)
+    print(metrics_df)
+    print(feature_importance_df)
+    print(metrics_list_by_cluster) 
+    return metrics_df, feature_importance_df, metrics_list_by_cluster
+
+
+
+def save_trained_models(results, output_dir):
+    os.makedirs(output_dir, exist_ok=True)
+
+    for model_name, model_results in results.items():
+        model_name_formatted = model_name.lower().replace(" ", "_")  # format model name
+        model = model_results["model"]  # Extract the trained model from the results
+        # Define the file path for saving the model
+        model_save_path = os.path.join(output_dir, f"{model_name_formatted}_model.pkl")
+        joblib.dump(model, model_save_path)
+        print(f"Model '{model_name}' saved to: {model_save_path}")

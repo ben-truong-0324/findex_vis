@@ -446,7 +446,6 @@ def train_and_evaluate_svm(X_train, y_train, X_test, y_test):
 
 # Function to train and evaluate the Decision Tree Regressor with different configurations
 def train_and_evaluate_dt(X_train, y_train, X_test, y_test, pred_type = "classifier"):
-    
 
     # Initialize models
     if pred_type == "classifier":
@@ -467,8 +466,6 @@ def train_and_evaluate_dt(X_train, y_train, X_test, y_test, pred_type = "classif
         bagging = BaggingRegressor(estimator = rf, n_estimators=N_ESTIMATOR, random_state=GT_ID)
 
     
-
-   
     param_grid = {  'max_depth': [3, 5, 10],
                     'min_samples_split': [2, 5],
                     'min_samples_leaf': [1, 2]}
@@ -477,14 +474,12 @@ def train_and_evaluate_dt(X_train, y_train, X_test, y_test, pred_type = "classif
     # Fit models
     models = {
         "Default Decision Tree": dt,
-        "Bagging": bagging,
-        "Boosting with Decision Tree": boosting,
-        # "XGBoost": xgboost_model,
-        # "XGBoost_class": xgb_class,
-        "Random Forest": rf,
-        # "Extra Trees": extra_trees,
-        "Histogram-based Gradient Boosting": hist_gb,
-        "Tuned Decision Tree (GridSearch)": grid_search,
+        # "Bagging": bagging,
+        # "Boosting with Decision Tree": boosting,
+       
+        # "Random Forest": rf,
+        # "Histogram-based Gradient Boosting": hist_gb,
+        # "Tuned Decision Tree (GridSearch)": grid_search,
     }
     
     results = {}
@@ -492,6 +487,7 @@ def train_and_evaluate_dt(X_train, y_train, X_test, y_test, pred_type = "classif
     # smote = SMOTE(sampling_strategy='auto', random_state=42)
     # X_train, y_train = smote.fit_resample(X_train, y_train)
     for model_name, model in models.items():
+        print("#"*18)
         print(model,model_name)
         start_time = time.time()
         model.fit(X_train, y_train)
@@ -507,7 +503,6 @@ def train_and_evaluate_dt(X_train, y_train, X_test, y_test, pred_type = "classif
             MODELS_OUTDIR,
             f"{model_name}_{timestamp}.joblib"
         )
-        print(len(np.unique(y_test)))
 
         if PRED_TYPE == "classifier":
             metric_average = 'binary' if len(np.unique(y_test)) == 2 else 'weighted'
@@ -525,6 +520,9 @@ def train_and_evaluate_dt(X_train, y_train, X_test, y_test, pred_type = "classif
                 "ROC_AUC": roc_auc,
                 "runtime": time.time() - start_time,
                 'params': model_params,
+                "y_pred": y_pred,
+                "model": model,
+
             }
             log_entry = (
                 f"Model: {model_name}\n"  # Ensure this is properly indented
@@ -555,6 +553,7 @@ def train_and_evaluate_dt(X_train, y_train, X_test, y_test, pred_type = "classif
                 "R2": r2,
                 "runtime": time.time() - start_time,
                 'params': model_params,
+                "y_pred": y_pred,
             }
             log_entry = (
                 f"Model: {model_name}\n"
@@ -570,31 +569,17 @@ def train_and_evaluate_dt(X_train, y_train, X_test, y_test, pred_type = "classif
                 f"{'#' * 50}\n"
             )
         
-        # joblib.dump(model, model_path)
-        # print(f"Model {model_name} saved at {model_path}")
-        
         # Append the log entry to the text file
         with open(MODEL_ALL_LOG_FILE, "a") as log_file:
             log_file.write(log_entry)
         ###############
         # evaluate_metrics_in_context(y_test, y_pred, model_name)
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        if len(y_test) > 50000:
-            random_indices = np.random.choice(len(y_test), 50000, replace=False)
-            try:
-                y_test_subset = pd.Series(y_test).iloc[random_indices]
-                y_pred_subset = pd.Series(y_pred).iloc[random_indices]
-            except Exception as e:
-                print("Type of y_test:", type(y_test))
-                print("Type of y_pred:", type(y_pred))
-                print(e)
-            plots.plot_predictions( y_test_subset, y_pred_subset,1, model_name,
-                    f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_diff_{model_name}_first50k.png",
-                    f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_hist_{model_name}_first50k.png")
-        else:
-            plots.plot_predictions( y_test, y_pred,1, model_name,
-                    f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_diff_{model_name}.png",
-                    f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_hist_{model_name}.png")
+        
+        plots.plot_predictions( y_test, y_pred,1, model_name,
+                f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_diff_{model_name}.png",
+                # f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_hist_{model_name}.png"
+                )
     return results
 
 # Function to train and evaluate the Decision Tree Regressor with different configurations
@@ -621,23 +606,61 @@ def train_and_evaluate_mpl_classification(X,y):
         
 
 def save_results(results,filename ):
-    print("Model Evaluation Results:", results)
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'wb') as f:
         pickle.dump(results, f)
     print(f"Results saved to {filename}")
 
+    if isinstance(results, pd.DataFrame):
+        df = results  # Use directly if already a DataFrame
+    elif isinstance(results, dict):
+        df = pd.DataFrame.from_dict(results, orient="index")  # Convert dict to DataFrame
+    elif isinstance(results, list):
+        df = pd.DataFrame(results)  # Convert list of dicts to DataFrame
+    else:
+        print(f"⚠️ Warning: Unsupported results format ({type(results)}). Skipping CSV saving.")
+        return
+
+    csv_filename = filename.rsplit(".", 1)[0] + ".csv"
+    df.to_csv(csv_filename, index=True)  
+    print(f"Results also saved as CSV: {csv_filename}")
+
+def economy_stratified_split(X, y, test_size=TEST_SIZE, random_state=GT_ID):
+    X_copy = X.copy()
+    if os.path.exists(ECONOMY_SAVE_PATH):
+        train_indices = []
+        test_indices = []
+        X_copy["economy_code"] = pd.read_pickle(ECONOMY_SAVE_PATH)
+        print(f"Loaded economy coding from: {ECONOMY_SAVE_PATH}")
+        for economy in X_copy["economy_code"].unique():
+            econ_indices = X_copy[X_copy["economy_code"] == economy].index
+            econ_train, econ_test = train_test_split(econ_indices, test_size=test_size, random_state=random_state)
+            train_indices.extend(econ_train)
+            test_indices.extend(econ_test)
+
+        y_test_economy_codes = X_copy.loc[test_indices, "economy_code"].copy()
+        X_copy = X_copy.drop(columns = ['economy_code'])
+        return X_copy.loc[train_indices], X_copy.loc[test_indices], \
+            y.loc[train_indices], y.loc[test_indices], y_test_economy_codes
+    else:
+        print("Economy save path not found. Using random split.")
+        return train_test_split(X, y, test_size=test_size, random_state=random_state) + (None,)
+
+    
+    
+
 def check_etl():
     X, y = etl.get_data()
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE, random_state=GT_ID)
+    X_train, X_test, y_train, y_test, y_test_economy_codes = economy_stratified_split(X, y)
+   
     test_data_etl_input_check(X,y,X_train, X_test, y_train, y_test, show = True)
-    print("done")
     ####
     etl.graph_raw_data(X, y)
     plots.analyze_feature_importance(X_train, y_train, f"")
     # plots.analyze_dim_reduc(X_train,y_train,X_test, y_test)
     
     print("======> Data verification complete")
-    return X,y,X_train, X_test, y_train, y_test 
+    return X,y,X_train, X_test, y_train, y_test, y_test_economy_codes
 
 def get_solutions(X_train):
     X_test, solution_id = etl.get_test_data()
@@ -715,23 +738,36 @@ def get_solutions(X_train):
 def main(): 
     np.random.seed(GT_ID)
   
-    do_skl_train = 0
-    do_torch_train = 1
+    do_skl_train = 1
+    do_torch_train = 0
     start_time = time.time()
-    print("hello world")
-    X,y,X_train, X_test, y_train, y_test  = check_etl()
+    X,y,X_train, X_test, y_train, y_test, y_test_economy_codes  = check_etl()
     check_data_info(X, y, X_train, X_test, y_train, y_test, show = False)
     print(f"Time to load data: {time.time() - start_time}s")
-
     ###### Sklearn models (just DT for now)
-    print("hello")
     if do_skl_train:
         print("starting skl models")
         results_dt = train_and_evaluate_dt(X_train, y_train, X_test, y_test)
-        save_results(results_dt, f"{Y_PRED_OUTDIR}/dt_results.pkl")
-      
+
+        save_results(results_dt, f"{Y_PRED_OUTDIR}/test{DRAFT_VER_A3}/dt_results.pkl")
+        save_trained_models(results_dt, f"{Y_PRED_OUTDIR}/test{DRAFT_VER_A3}/models/")
+        test_results_df = X_test.copy()
+        test_results_df["y_test"] = y_test.values  
+        for model_name, model_results in results_dt.items():
+            model_name_formatted = model_name.lower().replace(" ", "_")
+            test_results_df[f"y_pred_{model_name_formatted}"] = model_results["y_pred"]  #ea. predictions
+        test_results_df["economy_code"] = y_test_economy_codes  
+
+        # serialize to pickle
+        save_results(test_results_df, f"{Y_PRED_OUTDIR}/{DRAFT_VER_A3}/raw_test_set_with_pred.pkl")
+
+        trained_models = {name.lower().replace(" ", "_"): model_results["model"] for name, model_results in results_dt.items()}
+        metrics_df, feature_importance_df, metrics_list_by_cluster = ml_perf_eval_by_country(test_results_df, trained_models)
+        save_results(metrics_df, f"{Y_PRED_OUTDIR}/test{DRAFT_VER_A3}/metrics_by_countries.pkl")
+        save_results(feature_importance_df, f"{Y_PRED_OUTDIR}/test{DRAFT_VER_A3}/ft_importance.pkl")
+        save_results(metrics_list_by_cluster, f"{Y_PRED_OUTDIR}/test{DRAFT_VER_A3}/metrics_by_cluster.pkl")
         
-    ####### Torch models (just MPL for now)
+    ####### Torch models 
     if do_torch_train:
         print("starting torch models")
         mpl_result_save_file = f"{Y_PRED_OUTDIR}/mpl_results.pkl"
@@ -753,12 +789,7 @@ if __name__ == "__main__":
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Torch will be running on {device}")
     ####################
-    # etl.prelim_view(TRAIN_PATH_2021, True)
-    # etl.prelim_view(TRAIN_PATH_2017)
-    # etl.prelim_view(TRAIN_PATH_2014)
-    # etl.prelim_view(TRAIN_PATH_2011)
-    # etl.prelim_view(TRAIN_PATH_big)
-    
+    etl.prelim_view(TRAIN_PATH)
     
     main()
     
