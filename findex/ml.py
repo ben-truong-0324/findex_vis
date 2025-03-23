@@ -474,12 +474,12 @@ def train_and_evaluate_dt(X_train, y_train, X_test, y_test, pred_type = "classif
     # Fit models
     models = {
         "Default Decision Tree": dt,
-        # "Bagging": bagging,
-        # "Boosting with Decision Tree": boosting,
+        "Bagging": bagging,
+        "Boosting with Decision Tree": boosting,
        
-        # "Random Forest": rf,
-        # "Histogram-based Gradient Boosting": hist_gb,
-        # "Tuned Decision Tree (GridSearch)": grid_search,
+        "Random Forest": rf,
+        "Histogram-based Gradient Boosting": hist_gb,
+        "Tuned Decision Tree (GridSearch)": grid_search,
     }
     
     results = {}
@@ -621,9 +621,22 @@ def save_results(results,filename ):
         print(f"⚠️ Warning: Unsupported results format ({type(results)}). Skipping CSV saving.")
         return
 
-    csv_filename = filename.rsplit(".", 1)[0] + ".csv"
-    df.to_csv(csv_filename, index=True)  
-    print(f"Results also saved as CSV: {csv_filename}")
+    base_filename = filename.rsplit(".", 1)[0]
+
+    csv_filename = base_filename + ".csv"
+
+    try:
+        df.to_csv(csv_filename, index=True)  
+        print(f"Results also saved as CSV: {csv_filename}")
+    except Exception as e:
+        print(f"⚠️ Warning: Failed to save as CSV. Error: {e}")
+    
+    json_filename = base_filename + ".json"
+    try:
+        df.to_json(json_filename, orient="records", indent=4)
+        print(f"Results also saved as JSON: {json_filename}")
+    except Exception as e:
+        print(f"⚠️ Warning: Failed to save as JSON. Error: {e}")
 
 def economy_stratified_split(X, y, test_size=TEST_SIZE, random_state=GT_ID):
     X_copy = X.copy()
