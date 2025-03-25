@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Encoding Error</title>
+</head>
+<body>
+    <h1>Encoding Error Processing {{ filename }}</h1>
+    
+    <div class="error">
+        <p><strong>Error:</strong> {{ error }}</p>
+    </div>
+    
+    <h2>Please specify file encoding:</h2>
+    
+    <form action="/datasets/upload-with-encoding" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="filename" value="{{ filename }}">
+        <input type="file" name="file" style="display: none" id="file-input">
+        
+        <div>
+            <label>Select Encoding:</label>
+            <select name="encoding" required>
+                {% for encoding in suggested_encodings %}
+                <option value="{{ encoding }}">{{ encoding }}</option>
+                {% endfor %}
+                <option value="other">Other (specify below)</option>
+            </select>
+            <input type="text" name="custom_encoding" id="custom-encoding" 
+                   placeholder="Enter custom encoding" style="display: none">
+        </div>
+        
+        <button type="button" onclick="document.getElementById('file-input').click()">
+            Re-select File
+        </button>
+        <button type="submit">Try Again</button>
+    </form>
+    
+    <script>
+        document.querySelector('select[name="encoding"]').addEventListener('change', function() {
+            const customEncoding = document.getElementById('custom-encoding');
+            customEncoding.style.display = this.value === 'other' ? 'block' : 'none';
+            if (this.value !== 'other') {
+                customEncoding.value = '';
+            }
+        });
+    </script>
+</body>
+</html>

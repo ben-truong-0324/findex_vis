@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datasets</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fc;
+            text-align: center;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #0a3d62;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin: 10px 0;
+        }
+        a {
+            text-decoration: none;
+            background-color: #FFD700;
+            color: #0a3d62;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            transition: background 0.3s ease, transform 0.2s ease;
+            display: inline-block;
+        }
+        a:hover {
+            background-color: #E6C200;
+            transform: scale(1.05);
+        }
+        .upload-container {
+            margin-top: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            display: inline-block;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="file"] {
+            padding: 8px;
+        }
+        button {
+            background-color: #0a3d62;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s ease;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #082a45;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Available Processed Datasets</h1>
+    <ul>
+        {% for dataset in datasets %}
+        <li class="dataset-container">
+            <strong>{{ dataset.name }}</strong>
+            <br>
+            <small>Created on: {{ dataset.metadata.created_at if dataset.metadata else "N/A" }}</small>
+            <br>
+            <small>Original Rows: {{ dataset.metadata.original_rows if dataset.metadata else "N/A" }}</small>
+            <br>
+            <small>Columns After Processing: {{ dataset.metadata.columns_after if dataset.metadata else "N/A" }}</small>
+            <br>
+            <button onclick="window.location.href='/train/{{ dataset.name }}'">Train Model</button>
+        </li>
+        {% endfor %}
+    </ul>
+    
+    <h2>Upload New Dataset</h2>
+    <div class="upload-container">
+        <form action="/datasets/upload" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".csv">
+            <br>
+            <button type="submit">Upload & Process</button>
+        </form>
+    </div>
+
+</body>
+</html>

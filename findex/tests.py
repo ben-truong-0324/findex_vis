@@ -8,10 +8,9 @@ from tabulate import tabulate
 
 from sklearn.datasets import make_blobs
 
-import findex.ml
+import findex.ml_scripts
 
 from findex.config import *
-
 
 import pandas as pd
 import numpy as np

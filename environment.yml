@@ -4,9 +4,9 @@ channels:
   - nvidia
   - defaults
 dependencies:
-  - python=3.10
+  # - python=3.10
   - pytorch
-  - pytorch-cuda=12.4
+  # - pytorch-cuda=12.4
   - nose
   - numpy
   - pandas
@@ -14,11 +14,20 @@ dependencies:
   - tabulate
   - matplotlib
   - scikit-learn
-  
+  - fastapi
+  - uvicorn
+  - chardet
   - pip  # Ensure pip is available for installing pip packages
   - pip:
   - xgboost
   - imbalanced-learn
   - scikit-learn 
+  - python-multipart
+
+
     # - optuna
     # - bayesian-optimization
+
+    # conda env update --file environment.yml
+    # conda activate ml_general
+

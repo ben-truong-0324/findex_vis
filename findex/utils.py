@@ -887,6 +887,7 @@ def ml_perf_eval_by_country(test_results_df, trained_models):
     for model_col in model_pred_cols:
         model_name = model_col.replace("y_pred_", "")  # Extract model name
         grouped = test_results_df.groupby("economy_code")
+        print("Running for ", model_name)
 
         for cluster_method in ["km_clus", "gmm_clus" ]: #"dbscan_clus"
             clustered = test_results_df.groupby(cluster_method)

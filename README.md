@@ -18,7 +18,15 @@ Download/copy data into ./data/
 ```bash
 conda env create -f environment.yml
 conda env update --file environment.yml --prune
+conda env update --file environment.yml
 conda activate ml_general
 python -m findex.ml
 
+# uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn findex.main:app --host 0.0.0.0 --port 8000 --reload
+
+http://127.0.0.1:8000/docs
+
+docker build -t my-fastapi-app .
+docker run -p 8000:8000 my-fastapi-app
 ```

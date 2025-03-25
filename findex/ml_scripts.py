@@ -474,12 +474,12 @@ def train_and_evaluate_dt(X_train, y_train, X_test, y_test, pred_type = "classif
     # Fit models
     models = {
         "Default Decision Tree": dt,
-        "Bagging": bagging,
-        "Boosting with Decision Tree": boosting,
+        # "Bagging": bagging,
+        # "Boosting with Decision Tree": boosting,
        
-        "Random Forest": rf,
-        "Histogram-based Gradient Boosting": hist_gb,
-        "Tuned Decision Tree (GridSearch)": grid_search,
+        # "Random Forest": rf,
+        # "Histogram-based Gradient Boosting": hist_gb,
+        # "Tuned Decision Tree (GridSearch)": grid_search,
     }
     
     results = {}
@@ -806,3 +806,5 @@ if __name__ == "__main__":
     
     main()
     
+
+    #run model with fewer features for explainability
