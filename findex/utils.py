@@ -595,8 +595,8 @@ def save_model_log_results(best_cv_perfs, best_params,best_eval_func,best_models
         f"    Accuracy: {best_cv_perfs['Accuracy']:.4f}\n"
         f"    Precision: {best_cv_perfs['Precision']:.4f}\n"
         f"    Recall: {best_cv_perfs['Recall']:.4f}\n"
-        f"    F1 Score: {best_cv_perfs['F1_score']:.4f}\n"
-        f"    ROC AUC: {best_cv_perfs['ROC_AUC']:.4f}\n"
+        f"    F1 Score: {best_cv_perfs['F1 score']:.4f}\n"
+        f"    ROC AUC: {best_cv_perfs['ROC AUC']:.4f}\n"
         f"    Runtime: {best_cv_perfs['runtime']:.2f} seconds\n"
         f"{'#' * 50}\n"
     )

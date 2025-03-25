@@ -23,10 +23,10 @@ DATASET_SELECTION = "findex"
 PRED_TYPE = "classifier" #or "regression", "classifier"
 
 EVAL_FUNC_METRIC = 'accuracy' #'mae'  #rmse #'f1' # 'accuracy' 
-N_ESTIMATOR = 30
-TEST_SIZE = .3
-TARGET_COL = "fin7" #fin7, fin8b - criteria: <40% null rows and interesting
-UL_CLUSTER_COUNT = 7 #3, 5, 7, 12 - criteria: ~ arbitrary
+N_ESTIMATOR = 32
+TEST_SIZE = .25
+TARGET_COL = "fin8b" #fin7, fin8b - criteria: <40% null rows and interesting
+UL_CLUSTER_COUNT = 6 #3, 5, 7, 12 - criteria: ~ arbitrary
 ##############################
 TRAIN_PATH = TRAIN_PATH_2021
 YEAR_FILTER = 2021 #2021, 2017, 2014, 2011 - criteria: use whatever year is in main name of csv

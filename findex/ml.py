@@ -595,11 +595,14 @@ def train_and_evaluate_mpl_classification(X,y):
             "Accuracy": best_cv_perfs['Accuracy'],
             "Precision": best_cv_perfs['Precision'],
             "Recall": best_cv_perfs['Recall'],
-            "F1": best_cv_perfs['F1'],
-            "ROC AUC": best_cv_perfs['ROC AUC'],
+            "F1": best_cv_perfs['F1 Score'],
+            "ROC_AUC": best_cv_perfs['ROC AUC'],
             "All folds runtime": time.time() - model_start_time,
+            "runtime": time.time() - model_start_time,
             "Per fold runtime": best_cv_perfs['runtime'],
             "params": best_params,
+            # "y_pred": y_pred,
+            # "model": model,
     }
 
     return results
@@ -752,7 +755,7 @@ def main():
     np.random.seed(GT_ID)
   
     do_skl_train = 1
-    do_torch_train = 0
+    do_torch_train = 1
     start_time = time.time()
     X,y,X_train, X_test, y_train, y_test, y_test_economy_codes  = check_etl()
     check_data_info(X, y, X_train, X_test, y_train, y_test, show = False)
