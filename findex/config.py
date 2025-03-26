@@ -315,7 +315,7 @@ COLUMNS_TO_KEEP =  [
     "economycode",
     "pop_adult", #gonna need to log scale 
     "female", 
-    "educ", "inc_q", "account", "account_fin", "fin2", "fin14_1", "fin14a", 
+    "educ", "inc_q", "account", "account_fin", "fin7", "fin8b", "fin2", "fin14_1", "fin14a", 
     "fin14a1", "fin14b", "fin16", "fin17a", "fin20", "fin22a", "fin22b", 
     "fin24", "fin30", "fin32", "fin37", "fin38", "fin44a", "fin44b", 
     "fin44c", "fin44d", "saved", "borrowed", "receive_wages", "receive_transfers", 

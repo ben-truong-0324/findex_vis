@@ -466,3 +466,69 @@ def prelim_view(file_path, show_only_no_null=False):
     except Exception as e:
         print(f"An error occurred while processing the file: {e}")
 
+
+
+def drop_null_rows(df: pd.DataFrame) -> pd.DataFrame:
+    """Drop rows with any null values."""
+    return df.dropna()
+
+def drop_null_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Drop columns with any null values."""
+    return df.dropna(axis=1)
+
+def fill_null_with_value(df: pd.DataFrame, column: str, value) -> pd.DataFrame:
+    """Fill null values in a specific column with a given value."""
+    df[column].fillna(value, inplace=True)
+    return df
+
+def remove_duplicates(df: pd.DataFrame) -> pd.DataFrame:
+    """Remove duplicate rows."""
+    return df.drop_duplicates()
+
+def normalize_column(df: pd.DataFrame, column: str) -> pd.DataFrame:
+    """Apply min-max normalization to a column."""
+    df[column] = (df[column] - df[column].min()) / (df[column].max() - df[column].min())
+    return df
+
+def log_transform(df: pd.DataFrame, column: str) -> pd.DataFrame:
+    """Apply log transformation to a column."""
+    df[column] = df[column].apply(lambda x: x if x <= 0 else pd.np.log(x))
+    return df
+
+
+def custom_etl_v1(df: pd.DataFrame) -> pd.DataFrame:
+    try:
+        available_columns = [col for col in COLUMNS_TO_KEEP + [TARGET_COL] if col in df.columns]
+        df = df[available_columns]
+        economy_column = df['economy' ]  # Store non-numerical data for later
+
+        df = df.drop(columns=['economycode', 'economy']) 
+        df = drop_null_rows(df)
+
+        if "year" in df.columns:
+            df = df[df["year"] == YEAR_FILTER]
+        else:
+            print("⚠️ Warning: 'year' column not found in DataFrame. Skipping filter.")
+
+        df["pop_adult_scaled"] = np.log1p(df["pop_adult"])  # Log scaling
+        df.drop(columns=["pop_adult"], inplace=True) 
+
+        df = do_ul_cluster(df)
+        # df.rename(columns=MODIFIED_DATA_DICT, inplace=True)
+        return df
+    
+    except Exception as e:
+        print(f"Error loading data: {e}")
+        return None
+
+
+# Dictionary mapping function names to actual functions
+ETL_FUNCTIONS = {
+    "drop_null_rows": drop_null_rows,
+    "drop_null_columns": drop_null_columns,
+    "fill_null_with_value": fill_null_with_value,
+    "remove_duplicates": remove_duplicates,
+    "normalize_column": normalize_column,
+    "log_transform": log_transform,
+    "custom_etl_v1": custom_etl_v1,
+}

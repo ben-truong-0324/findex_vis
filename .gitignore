@@ -1,5 +1,10 @@
-.env
 venv
 data
 outputs
 __pycache__/
+*.env
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3

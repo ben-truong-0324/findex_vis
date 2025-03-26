@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Train Model</title>
+    <style>
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1, h2 {
+            color: #0A2472;
+        }
+        .container {
+            width: 60%;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            font-weight: bold;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            margin: 5px 0;
+        }
+        .btn {
+            background-color: #FFC107;
+            color: #333;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn:hover {
+            background-color: #FFD54F;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Train Model on <strong>{{ dataset }}</strong></h1>
+    
+    <form action="/train/{{ dataset }}/start" method="post">
+        
+        <!-- Target Column Selection -->
+        <label for="target_column">Select Target Column:</label>
+        <select name="target_column" id="target_column" required>
+            {% for column in columns %}
+            <option value="{{ column }}">{{ column }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- Train/Test Split -->
+        <label for="test_size">Test Size:</label>
+        <input type="number" name="test_size" id="test_size" step="0.01" min="0.1" max="0.5" value="0.2" required>
+
+        
+  
+            <!-- Model Selection -->
+        <label>Select Models to Train:</label>
+        <div class="checkbox-group">
+            {% for model in models %}
+            <label>
+                <input type="checkbox" name="selected_models" value="{{ model }}"> {{ model }}
+            </label>
+            {% endfor %}
+        </div>
+
+        <h3>Training Options</h3>
+        <div class="checkbox-group">
+            <label>
+                <input type="checkbox" name="early_stopping" value="yes"> Enable Early Stopping
+            </label>
+            <label>
+                <input type="checkbox" name="cross_validation" value="yes"> Use Cross Validation
+            </label>
+        </div>
+  
+  
+
+        <label for="max_epochs">Max Epochs (if applicable):</label>
+        <input type="number" name="max_epochs" id="max_epochs" min="10" max="500" value="100">
+
+        <button type="submit" class="btn">Train Selected Models</button>
+    </form>
+</div>
+
+</body>
+</html>

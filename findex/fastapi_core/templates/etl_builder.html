@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ETL Builder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1, h2 {
+            color: #0A2472;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .metadata-table, .steps-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .metadata-table th, .metadata-table td, .steps-table th, .steps-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .metadata-table th, .steps-table th {
+            background-color: #0A2472;
+            color: white;
+        }
+        .btn {
+            background-color: #FFC107;
+            color: #333;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn:hover {
+            background-color: #FFD54F;
+        }
+        .metadata-section {
+            display: none;
+            margin-top: 10px;
+        }
+        .toggle-btn {
+            background-color: #0A2472;
+            color: white;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .toggle-btn:hover {
+            background-color: #063970;
+        }
+    </style>
+    <script>
+        function toggleMetadata() {
+            var metadataDiv = document.getElementById("metadata-section");
+            metadataDiv.style.display = metadataDiv.style.display === "none" ? "block" : "none";
+        }
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <h1>ETL Builder: {{ pipeline_name }}</h1>
+    <h2>Dataset: {{ dataset }}</h2>
+
+    <!-- Rename Pipeline Form -->
+    <form action="/etl/{{ session_id }}/rename" method="post">
+        <label for="pipeline_name"><strong>Rename Pipeline:</strong></label>
+        <input type="text" name="pipeline_name" id="pipeline_name" value="{{ pipeline_name }}" required>
+        <button type="submit" class="btn">Rename</button>
+    </form>
+
+    <!-- Toggle Metadata Button -->
+    <button onclick="toggleMetadata()" class="toggle-btn">Show/Hide Metadata</button>
+
+    <!-- Metadata Section -->
+    <div id="metadata-section" class="metadata-section">
+        <h3>Dataset Metadata</h3>
+        <table class="metadata-table">
+            <tbody>
+                {% for key, value in metadata.items() %}
+                <tr>
+                    <td><strong>{{ key }}</strong></td>
+                    <td>{{ value }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ETL Step Selection -->
+    <form action="/etl/{{ session_id }}/apply" method="post">
+        <h3>Apply ETL Transformation</h3>
+
+        <label for="action">Select ETL Action:</label>
+        <select name="action" id="action" required>
+            {% for function in etl_functions %}
+            <option value="{{ function }}">{{ function }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="column">Column (if needed):</label>
+        <select name="column" id="column">
+            <option value="">None</option>
+            {% for col in columns %}
+            <option value="{{ col }}">{{ col }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="value">Value (if needed):</label>
+        <input type="text" name="value" id="value">
+
+        <button type="submit" class="btn">Apply</button>
+    </form>
+
+    <!-- Applied ETL Steps -->
+    <h3>Applied ETL Steps</h3>
+    <table class="steps-table">
+        <thead>
+            <tr>
+                <th>Action</th>
+                <th>Column</th>
+                <th>Value</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for step in steps %}
+            <tr>
+                <td>{{ step.action }}</td>
+                <td>{{ step.column or "N/A" }}</td>
+                <td>{{ step.value or "N/A" }}</td>
+                <td>{{ step.timestamp }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <form action="/etl/{{ session_id }}/finalize" method="post">
+        <button type="submit" class="btn">Finalize & Save</button>
+    </form>
+</div>
+
+</body>
+</html>

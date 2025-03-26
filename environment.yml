@@ -15,6 +15,7 @@ dependencies:
   - matplotlib
   - scikit-learn
   - fastapi
+  - loguru
   - uvicorn
   - chardet
   - pip  # Ensure pip is available for installing pip packages

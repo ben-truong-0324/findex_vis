@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datasets</title>
+    <style>
+        .dataset-list {
+        list-style: none;
+        padding: 0;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .dataset-container {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .dataset-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .toggle-metadata {
+        background: #e9ecef;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+    }
+    
+    .toggle-metadata:hover {
+        background: #dee2e6;
+    }
+    
+    .train-btn {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 5px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+    }
+    
+    .train-btn:hover {
+        background: #0069d9;
+    }
+    
+    .metadata-container {
+        margin-top: 15px;
+        padding: 15px;
+        background: white;
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .metadata-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .metadata-table th, .metadata-table td {
+        padding: 8px;
+        border-bottom: 1px solid #dee2e6;
+        text-align: left;
+        vertical-align: top;
+    }
+    
+    .metadata-table th {
+        width: 30%;
+        font-weight: 600;
+    }
+    
+    .metadata-table tr:last-child th,
+    .metadata-table tr:last-child td {
+        border-bottom: none;
+    }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fc;
+            text-align: center;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #0a3d62;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin: 10px 0;
+        }
+        a {
+            text-decoration: none;
+            background-color: #FFD700;
+            color: #0a3d62;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            transition: background 0.3s ease, transform 0.2s ease;
+            display: inline-block;
+        }
+        a:hover {
+            background-color: #E6C200;
+            transform: scale(1.05);
+        }
+        .upload-container {
+            margin-top: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            display: inline-block;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="file"] {
+            padding: 8px;
+        }
+        button {
+            background-color: #0a3d62;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s ease;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #082a45;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Available Processed Datasets</h1>
+    <ul class="dataset-list">
+        {% for dataset in datasets %}
+        <li class="dataset-container">
+            <div class="dataset-header">
+                <strong>{{ dataset.name }}</strong>
+                <button class="toggle-metadata" onclick="toggleMetadata('{{ dataset.name }}')">
+                    Show Metadata ▼
+                </button>
+                <button class="train-btn" onclick="window.location.href='/train/{{ dataset.name }}'">
+                    Train Model
+                </button>
+            </div>
+            
+            <div id="metadata-{{ dataset.name }}" class="metadata-container" style="display: none;">
+                <table class="metadata-table">
+                    {% if dataset.metadata %}
+                        {% for key, value in dataset.metadata.items() %}
+                        <tr>
+                            <th>{{ key|replace('_', ' ')|title }}</th>
+                            <td>
+                                {% if value is mapping %}
+                                    <ul>
+                                        {% for subkey, subvalue in value.items() %}
+                                        <li><strong>{{ subkey }}:</strong> {{ subvalue }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% elif value is iterable and value is not string %}
+                                    {{ value|join(', ') }}
+                                {% else %}
+                                    {{ value }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="2">No metadata available</td>
+                        </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    
+    <h2>Upload New Dataset</h2>
+    <div class="upload-container">
+        <form action="/datasets/upload" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".csv">
+            <br>
+            <button type="submit">Upload & Process</button>
+        </form>
+    </div>
+
+    <script>
+        function toggleMetadata(datasetName) {
+            const metadataDiv = document.getElementById(`metadata-${datasetName}`);
+            const button = metadataDiv.previousElementSibling.querySelector('.toggle-metadata');
+            
+            if (metadataDiv.style.display === 'none') {
+                metadataDiv.style.display = 'block';
+                button.textContent = 'Hide Metadata ▲';
+            } else {
+                metadataDiv.style.display = 'none';
+                button.textContent = 'Show Metadata ▼';
+            }
+        }
+    </script>
+</body>
+</html>
