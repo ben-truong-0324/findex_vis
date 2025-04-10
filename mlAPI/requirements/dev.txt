@@ -3,7 +3,7 @@ black
 mypy
 flake8
 debugpy 
-xgboost
-imbalanced-learn
+# xgboost
+# imbalanced-learn
 scikit-learn
 python-multipart

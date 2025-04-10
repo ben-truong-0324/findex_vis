@@ -1,0 +1,110 @@
+# ------------------------------
+# Deployment for Flask Application
+# ------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-app-deployment
+  labels:
+    app: flask-app
+spec:
+  replicas: 3                     # Three replicas for load balancing and redundancy.
+  selector:
+    matchLabels:
+      app: flask-app
+  template:
+    metadata:
+      labels:
+        app: flask-app
+    spec:
+      containers:
+      - name: flask-app
+        image: flask_app:latest   # This image was built locally in Minikube's Docker environment.
+        ports:
+        - containerPort: 5000
+        # Liveness probe for automated restarts if the pod is unhealthy.
+        livenessProbe:
+          httpGet:
+            path: /health         # Ensure your Flask app exposes a health endpoint.
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        # Readiness probe to determine when the pod is ready to receive traffic.
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+# ------------------------------
+# Service to Expose Flask Application
+# ------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-app-service
+spec:
+  selector:
+    app: flask-app
+  ports:
+    - protocol: TCP
+      port: 80                # External port on the node.
+      targetPort: 5000        # Port on which Flask is running inside the pod.
+  type: NodePort              # NodePort exposes the app on a port of your local machine.
+
+---
+# ------------------------------
+# Deployment for mlAPI (FastAPI) Application
+# ------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlapi-deployment
+  labels:
+    app: mlapi
+spec:
+  replicas: 3                   # Three replicas for load balancing and redundancy.
+  selector:
+    matchLabels:
+      app: mlapi
+  template:
+    metadata:
+      labels:
+        app: mlapi
+    spec:
+      containers:
+      - name: mlapi
+        image: mlapi:latest     # This image was built locally.
+        ports:
+        - containerPort: 8000
+        livenessProbe:
+          httpGet:
+            path: /health       # Ensure your FastAPI app exposes a health endpoint.
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+# ------------------------------
+# Service to Expose mlAPI Application
+# ------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlapi-service
+spec:
+  selector:
+    app: mlapi
+  ports:
+    - protocol: TCP
+      port: 80                # External port on the node.
+      targetPort: 8000        # Port on which FastAPI is running inside the pod.
+  type: NodePort              # Exposes the service for local access.

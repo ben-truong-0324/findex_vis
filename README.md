@@ -41,9 +41,9 @@ docker push <username>/mlapi:latest
 open /Applications/Docker.app
 minikube start --driver=docker
 eval $(minikube docker-env)  #set local docker env to minikube
+
 docker run -v /path/to/your/local/code:/app -p 8000:8000 mlapi:latest
 docker run -v
-
 cd mlAPI
 docker build -t mlapi:latest . #now build image of app, to be built in container of minikube
 #image built inside minikube docker, to check:
@@ -56,7 +56,8 @@ kubectl get all
 # kubectl get ingress
 # kubectl get services
 # kubectl get deployments
-kubectl apply -k ./k8s/overlays/dev
+# kubectl apply -k ./k8s/overlays/dev
+kubectl apply -f k8s/deployments.yaml
 kubectl get pods
 minikube addons enable ingress
 minikube tunnel
