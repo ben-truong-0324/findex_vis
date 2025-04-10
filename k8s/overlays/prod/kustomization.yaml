@@ -1,0 +1,14 @@
+bases:
+  - ../../base
+
+images:
+  - name: your_dockerhub_user/mlapi
+    newTag: "prod-latest"
+
+replicas:
+  - name: fastapi-deployment
+    count: 3
+
+# Optional: Apply SSL certs or more complex patches for prod
+patchesStrategicMerge:
+  - ingress-prod-patch.yaml

@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: findex-ingress
+spec:
+  rules:
+    - host: fastapi.yourdomain.com   # Real domain for prod
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: fastapi-service
+              port:
+                number: 8000
+    - host: flask.yourdomain.com    # Real domain for prod
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: flask-service
+              port:
+                number: 5000
+  tls:
+  - hosts:
+    - fastapi.yourdomain.com
+    - flask.yourdomain.com
+    secretName: my-tls-secret  # Secret for TLS certs

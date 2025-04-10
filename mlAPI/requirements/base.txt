@@ -1,0 +1,14 @@
+torch
+pytorch-cuda=12.4
+nose
+numpy
+pandas
+seaborn
+tabulate
+matplotlib
+scikit-learn
+fastapi
+loguru
+uvicorn
+chardet
+pip

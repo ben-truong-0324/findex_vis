@@ -1,0 +1,12 @@
+bases:
+  - ../../base
+
+namePrefix: dev
+
+images:
+  - name: mlapi
+    newName: mlapi
+    newTag: latest
+
+patchesStrategicMerge:
+  - ingress-patch.yaml

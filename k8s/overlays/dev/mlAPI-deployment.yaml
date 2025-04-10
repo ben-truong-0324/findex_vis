@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlapi-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlapi
+  template:
+    metadata:
+      labels:
+        app: mlapi
+    spec:
+      containers:
+        - name: mlapi
+          image: mlapi:latest
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - mountPath: /app
+              name: mlapi-code
+      volumes:
+        - name: mlapi-code
+          hostPath:
+            path: /path/to/your/local/code
+            type: Directory

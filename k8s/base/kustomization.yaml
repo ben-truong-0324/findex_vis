@@ -1,0 +1,5 @@
+resources:
+  - mlAPI-deployment.yaml
+  - mlAPI-service.yaml
+  # - configmap.yaml
+  - ingress.yaml

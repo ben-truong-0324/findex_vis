@@ -1,0 +1,9 @@
+pytest
+black
+mypy
+flake8
+debugpy 
+xgboost
+imbalanced-learn
+scikit-learn
+python-multipart
