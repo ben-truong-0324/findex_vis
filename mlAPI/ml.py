@@ -445,7 +445,7 @@ def train_and_evaluate_svm(X_train, y_train, X_test, y_test):
         print(f"Accuracy: {metrics['accuracy']}\n")
 
 # Function to train and evaluate the Decision Tree Regressor with different configurations
-def train_and_evaluate_dt(X_train, y_train, X_test, y_test, pred_type = "classifier"):
+def train_and_evaluate_dt(X_train, y_train, X_test, y_test, model_type = "Default Decision Tree", pred_type = "classifier"):
 
     # Initialize models
     if pred_type == "classifier":
@@ -481,6 +481,15 @@ def train_and_evaluate_dt(X_train, y_train, X_test, y_test, pred_type = "classif
         # "Histogram-based Gradient Boosting": hist_gb,
         # "Tuned Decision Tree (GridSearch)": grid_search,
     }
+    if isinstance(model_type, str):
+        selected_models = [model_type]
+    elif isinstance(model_type, list):
+        selected_models = model_type
+    else:
+        raise ValueError("model_type must be a string or list of strings")
+    models = {name: model for name, model in models.items() if name in selected_models}
+    if not models:
+        raise ValueError(f"No valid models selected. Available models: {list(models.keys())}")
     
     results = {}
     # print("getting smote")
@@ -829,141 +838,34 @@ if __name__ == "__main__":
 
     #run model with fewer features for explainability
 
+# mlAPI/ml.py
 
+def run_prediction(model_type: str = "Default Decision Tree"):
+    np.random.seed(GT_ID)
 
-# def train_and_evaluate_dt():
+    X, y, X_train, X_test, y_train, y_test, y_test_economy_codes, y_test_population, y_test_region = check_etl()
+    check_data_info(X, y, X_train, X_test, y_train, y_test, show=False)
 
-#     # Initialize models
-#     if pred_type == "classifier":
-#         dt = DecisionTreeClassifier(random_state=GT_ID)
-#         boosting = GradientBoostingClassifier(n_estimators=N_ESTIMATOR, learning_rate=0.001, random_state=GT_ID)
-#         rf = RandomForestClassifier(n_estimators=N_ESTIMATOR, random_state=GT_ID)
-#         extra_trees = ExtraTreesClassifier(n_estimators=N_ESTIMATOR, random_state=GT_ID)
-#         hist_gb = HistGradientBoostingClassifier(max_iter=N_ESTIMATOR, random_state=GT_ID)
-#         svm_model = SVC(kernel='rbf', C=1, gamma='scale', random_state=42)  # No change needed, it's already a classifier
-#         bagging = BaggingClassifier(estimator=rf, n_estimators=N_ESTIMATOR, random_state=GT_ID)
-#     else:
-#         dt = DecisionTreeRegressor(random_state=GT_ID)
-#         boosting = GradientBoostingRegressor(n_estimators=N_ESTIMATOR, learning_rate=0.001, random_state=GT_ID)
-#         rf = RandomForestRegressor(n_estimators=N_ESTIMATOR, random_state=GT_ID)
-#         extra_trees = ExtraTreesRegressor(n_estimators=N_ESTIMATOR, random_state=GT_ID)
-#         hist_gb = HistGradientBoostingRegressor(max_iter=N_ESTIMATOR, random_state=GT_ID)
-#         svm_model = SVC(kernel='rbf', C=1, gamma='scale', random_state=42)
-#         bagging = BaggingRegressor(estimator = rf, n_estimators=N_ESTIMATOR, random_state=GT_ID)
+    # Train selected model(s)
+    results_dt = train_and_evaluate_dt(X_train, y_train, X_test, y_test, model_type=model_type)
 
-    
-#     param_grid = {  'max_depth': [3, 5, 10],
-#                     'min_samples_split': [2, 5],
-#                     'min_samples_leaf': [1, 2]}
-#     grid_search = GridSearchCV(dt, param_grid, cv=5, scoring='neg_mean_squared_error')
-    
-#     # Fit models
-#     models = {
-#         "Default Decision Tree": dt,
-#         # "Bagging": bagging,
-#         # "Boosting with Decision Tree": boosting,
-       
-#         # "Random Forest": rf,
-#         # "Histogram-based Gradient Boosting": hist_gb,
-#         # "Tuned Decision Tree (GridSearch)": grid_search,
-#     }
-    
-#     results = {}
-#     # print("getting smote")
-#     # smote = SMOTE(sampling_strategy='auto', random_state=42)
-#     # X_train, y_train = smote.fit_resample(X_train, y_train)
-#     for model_name, model in models.items():
-#         print("#"*18)
-#         print(model,model_name)
-#         start_time = time.time()
-#         model.fit(X_train, y_train)
-#         y_pred = model.predict(X_test)
+    test_results_df = X_test.copy()
+    test_results_df["y_test"] = y_test.values
 
-#         if np.any(np.isnan(y_test)):
-#             print("Warning: NaN values found in y_test")
-#         if np.any(np.isnan(y_pred)):
-#             print("Warning: NaN values found in y_pred")
+    for model_name, model_results in results_dt.items():
+        model_name_formatted = model_name.lower().replace(" ", "_")
+        test_results_df[f"y_pred_{model_name_formatted}"] = model_results["y_pred"]
 
-#         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-#         model_path = os.path.join(
-#             MODELS_OUTDIR,
-#             f"{model_name}_{timestamp}.joblib"
-#         )
+    test_results_df["economy_code"] = y_test_economy_codes
+    test_results_df["population"] = y_test_population
+    test_results_df["regionwb"] = y_test_region
 
-#         if PRED_TYPE == "classifier":
-#             metric_average = 'binary' if len(np.unique(y_test)) == 2 else 'weighted'
-#             accuracy = accuracy_score(y_test, y_pred)
-#             precision = precision_score(y_test, y_pred, average=metric_average)  
-#             recall = recall_score(y_test, y_pred, average=metric_average)  
-#             f1 = f1_score(y_test, y_pred, average=metric_average)  
-#             roc_auc = roc_auc_score(y_test, y_pred) if len(np.unique(y_test)) == 2 else 0  
-#             model_params = model.get_params() if hasattr(model, 'get_params') else 0
-#             results[model_name] = {
-#                 "Accuracy": accuracy,
-#                 "Precision": precision,
-#                 "Recall": recall,
-#                 "F1_score": f1,
-#                 "ROC_AUC": roc_auc,
-#                 "runtime": time.time() - start_time,
-#                 'params': model_params,
-#                 "y_pred": y_pred,
-#                 "model": model,
+    # Just the selected models
+    trained_models = {
+        model_name.lower().replace(" ", "_"): model_results["model"]
+        for model_name, model_results in results_dt.items()
+    }
 
-#             }
-#             log_entry = (
-#                 f"Model: {model_name}\n"  # Ensure this is properly indented
-#                 f"Saved Path: {model_path}\n"
-#                 f"Timestamp: {timestamp}\n"
-#                 f"Accuracy: {results[model_name]['Accuracy']:.4f}\n"
-#                 f"Precision: {results[model_name]['Precision']:.4f}\n"
-#                 f"Recall: {results[model_name]['Recall']:.4f}\n"
-#                 f"F1 Score: {results[model_name]['F1_score']:.4f}\n"
-#                 f"ROC AUC: {results[model_name]['ROC_AUC']:.4f}\n"
-#                 f"Runtime: {results[model_name]['runtime']:.2f} seconds\n"
-#                 f"Model Hyperparameters: {model_params}\n"
-#                 f"{'#' * 50}\n"
-#             )
-#         else:
-#             mse = mean_squared_error(y_test, y_pred)
-#             mae = mean_absolute_error(y_test, y_pred)
-#             r2 = r2_score(y_test, y_pred)
-#             rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-#             rmlse = np.sqrt(mean_squared_error(np.log1p(y_test), np.log1p(y_pred)))
-#             model_params = model.get_params() if hasattr(model, 'get_params') else None
+    metrics_df, _, _ = ml_perf_eval_by_country(test_results_df, trained_models)
 
-#             results[model_name] = {
-#                 "MSE": mse,
-#                 "MAE": mae,
-#                 "RMSE": rmse,
-#                 "RMLSE": rmlse,
-#                 "R2": r2,
-#                 "runtime": time.time() - start_time,
-#                 'params': model_params,
-#                 "y_pred": y_pred,
-#             }
-#             log_entry = (
-#                 f"Model: {model_name}\n"
-#                 f"Saved Path: {model_path}\n"
-#                 f"Timestamp: {timestamp}\n"
-#                 f"MSE: {results[model_name]['MSE']:.4f}\n"
-#                 f"MAE: {results[model_name]['MAE']:.4f}\n"
-#                 f"RMSE: {results[model_name]['RMSE']:.4f}\n"
-#                 f"RMLSE: {results[model_name]['RMLSE']:.4f}\n"
-#                 f"R2: {results[model_name]['R2']:.4f}\n"
-#                 f"Runtime: {results[model_name]['runtime']:.2f} seconds\n"
-#                 f"Model Hyperparameters: {model_params}\n"  
-#                 f"{'#' * 50}\n"
-#             )
-        
-#         # Append the log entry to the text file
-#         with open(MODEL_ALL_LOG_FILE, "a") as log_file:
-#             log_file.write(log_entry)
-#         ###############
-#         # evaluate_metrics_in_context(y_test, y_pred, model_name)
-#         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        
-#         plots.plot_predictions( y_test, y_pred,1, model_name,
-#                 f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_diff_{model_name}.png",
-#                 # f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_hist_{model_name}.png"
-#                 )
-#     return results
+    return metrics_df

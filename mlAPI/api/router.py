@@ -1,9 +1,16 @@
+# from fastapi import APIRouter
+# from api.routes import datasets, etl, models # infer, \
+#                             #admin, status, monitor
+
+# api_router = APIRouter()
+# api_router.include_router(datasets.router, tags=["datasets"], prefix="/datasets")
+# api_router.include_router(etl.router, tags=["etl"], prefix="/etl")
+# api_router.include_router(models.router, tags=["models"], prefix="/models")
+
+
+
 from fastapi import APIRouter
-from api.routes import datasets, etl, models # infer, \
-                            #admin, status, monitor
+from mlAPI.routes import ml_routes
 
 api_router = APIRouter()
-api_router.include_router(datasets.router, tags=["datasets"], prefix="/datasets")
-api_router.include_router(etl.router, tags=["etl"], prefix="/etl")
-api_router.include_router(models.router, tags=["models"], prefix="/models")
-
+api_router.include_router(ml_routes.router, prefix="/ml", tags=["ml"])

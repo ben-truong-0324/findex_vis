@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Inclusion Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='library/d3.v5.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='library/d3-dsv.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='library/d3-geo-projection.v2.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='library/d3-legend.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='library/d3-tip.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='library/topojson.v2.min.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+     <script type="module" src="{{ url_for('static', filename='js/table.js') }}"></script>
+</head>
+<body>
+  <div class="dashboard">
+
+    <!-- Header -->
+    <header class="header">
+      <h1>Financial Inclusion Predictors</h1>
+    </header>
+
+    <!-- Model Performance Table -->
+    <section class="performance-section">
+      <h2>Model Performance by Method</h2>
+      <div class="performance-table">
+        <!-- Add your performance stats here -->
+      </div>
+    </section>
+
+    <!-- Map Section -->
+    <section class="map-section">
+      <h2>Level of Financial Inclusion by Country</h2>
+      <div class="map-container">
+        <svg id="choropleth-map"></svg>
+        <div class="map-side-panel">
+          <!-- Legend + Filters -->
+          <div class="filters">
+          <label for="econ-size-filter">Economy Size:</label>
+             <select id="econ-size-filter">
+             <option value="all">All</option>
+             <option value="Small">Small</option>
+             <option value="Medium">Medium</option>
+             <option value="Large">Large</option>
+             </select>
+          </div>
+            <div class="filters">
+                <label for="region-filter">World Regions:</label>
+             <select id="region-filter">
+                 <option value="all">All</option>
+                 <option value="High income">High income</option>
+                 <option value="Europe & Central Asia (excluding high income)">Europe & Central Asia (excluding high income)</option>
+                 <option value="Latin America & Caribbean (excluding high income)">Latin America & Caribbean (excluding high income)</option>
+                 <option value="South Asia">South Asia</option>
+                 <option value="Sub-Saharan Africa (excluding high income)">Sub-Saharan Africa (excluding high income)</option>
+                 <option value="East Asia & Pacific (excluding high income)">East Asia & Pacific (excluding high income)</option>
+                 <option value="Middle East & North Africa (excluding high income)">Middle East & North Africa (excluding high income)</option>
+             </select>
+          </div>
+                  <div class="top-countries-table-container">
+                <h3>Top 15 Countries by Population</h3>
+                <table id="top-countries-table">
+                  <thead>
+                    <tr>
+                      <th>Rank</th>
+                      <th>Country</th>
+                      <th>Population</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  </tbody>
+                </table>
+              </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature Importance Section -->
+    <section class="predictors-section">
+      <h2>Main Predictors of Financial Inclusion based on Economy Size and Region</h2>
+        <svg id="feature-bar-chart"></svg>
+    </section>
+  </div>
+    <div id="bar-tooltip"></div>
+    <div id="map-tooltip"></div>
+</body>
+
+</html>

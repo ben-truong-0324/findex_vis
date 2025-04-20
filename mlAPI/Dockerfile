@@ -3,7 +3,7 @@ FROM python:3.9-slim
 
 # Build argument to decide if CUDA packages should be installed.
 # Default is 'no' (i.e. don't install CUDA) which is suitable for Mac dev.
-ARG INSTALL_CUDA=no
+ARG INSTALL_CUDA=yes
 
 # Set the working directory in the container.
 WORKDIR /app

@@ -1,32 +1,39 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fastapi-deployment
+  name: mlapi
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: fastapi
+      app: mlapi
   template:
     metadata:
       labels:
-        app: fastapi
+        app: mlapi
     spec:
       containers:
-      - name: fastapi
-        image: my-fastapi-image:latest  # Replace with your actual image
+      - name: mlapi
+        image: mlapi_image
         ports:
-        - containerPort: 8000
+        - containerPort: 8000  # or whatever your ML API uses
+        volumeMounts:
+        - mountPath: /app/data
+          name: shared-data
+      volumes:
+      - name: shared-data
+        hostPath:
+          path: /mnt/data
+          type: Directory
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: fastapi-service
+  name: mlapi-service
 spec:
   selector:
-    app: fastapi
+    app: mlapi
   ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 8000
-  type: LoadBalancer
+  - protocol: TCP
+    port: 80
+    targetPort: 8000  # match containerPort above

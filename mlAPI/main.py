@@ -6,6 +6,7 @@ from fastapi.responses import RedirectResponse
 
 
 import mlAPI.ml_scripts
+import mlAPI.ml
 import mlAPI.etl  
 from etl import ETL_FUNCTIONS  
 
@@ -28,4 +29,6 @@ configure_static(app)
 
 @app.get("/")
 async def root():
-    return RedirectResponse(url=f"/api/datasets", status_code=303)
+    # return RedirectResponse(url=f"/api/datasets", status_code=303)
+    return RedirectResponse(url=f"{API_PREFIX}/ml/data-files", status_code=303)
+

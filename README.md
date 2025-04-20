@@ -16,19 +16,35 @@ Containerized Deployment: The entire application is containerized using Docker.
 Download/copy data into ./data/
 
 ```bash
-conda env create -f environment.yml
-conda env update --file environment.yml --prune
-conda env update --file environment.yml
-conda activate ml_general
-python -m mlAPI.ml
-
+# conda env create -f environment.yml
+# conda env update --file environment.yml --prune
+# conda env update --file environment.yml
+# conda activate ml_general
+# python -m mlAPI.ml
 # uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
-uvicorn findex.main:app --host 0.0.0.0 --port 8000 --reload
-
+# uvicorn findex.main:app --host 0.0.0.0 --port 8000 --reload
 #run in dev with separate containers
 # docker compose up --build -d
 # app1: http://localhost:8080
 # app2: http://localhost:8080
+#run in DEV with minikube and mounted vol
+# may need to exit out venv/conda to see Docker
+open /Applications/Docker.app
+minikube start --driver=docker
+eval $(minikube docker-env)  #set local docker env to minikube. this is for mac
+#& minikube -p minikube docker-env --shell=cmd | Invoke-Expression #powershell
+#minikube docker-env --shell=cmd #windows anaconda prompt
+#@FOR /f "tokens=*" %i IN ('minikube docker-env --shell=cmd') DO @%i
+minikube mount ./data:/mnt/data
+docker build -t flask_app_image ./flask_app
+kubectl apply -f k8s/fe_flask.yaml
+kubectl apply -f k8s/flask_app_service.yaml
+kubectl get pods -w
+docker build -t fast_api_image ./mlAPI
+kubectl apply -f k8s/mlAPI.yaml
+
+
+
 
 #run PROD with k8 and uploaded registry
 docker build -t mlapi:latest . 
@@ -36,11 +52,7 @@ docker login
 docker tag mlapi:latest <username>/mlapi:latest
 docker push <username>/mlapi:latest
 
-#run in DEV with minikube and mounted vol
-# may need to exit out venv/conda to see Docker
-open /Applications/Docker.app
-minikube start --driver=docker
-eval $(minikube docker-env)  #set local docker env to minikube
+
 
 docker run -v /path/to/your/local/code:/app -p 8000:8000 mlapi:latest
 docker run -v
