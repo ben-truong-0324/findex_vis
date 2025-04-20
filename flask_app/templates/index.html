@@ -83,6 +83,32 @@
         <svg id="feature-bar-chart"></svg>
     </section>
   </div>
+  {% if data_files_api %}
+    <section>
+      <h2>Available Data Files</h2>
+      <ul>
+        {% for file in data_files_api %}
+          <li>{{ file }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% else %}
+    <p></p>
+  {% endif %}
+ 
+  <section>
+    <h2>Run Prediction</h2>
+    <form method="POST" action="/run-prediction">
+      <label for="model_type">Select Model:</label>
+      <select name="model_type" id="model_type">
+        <option value="Default Decision Tree">Default Decision Tree</option>
+        <option value="Bagging">Bagging</option>
+        <option value="Random Forest">Random Forest</option>
+      </select>
+      <button type="submit">Run Prediction</button>
+    </form>
+  </section>
+
     <div id="bar-tooltip"></div>
     <div id="map-tooltip"></div>
 </body>

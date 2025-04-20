@@ -18,12 +18,19 @@ def list_data_files():
     except FileNotFoundError:
         return JSONResponse(status_code=404, content={"error": "Data folder not found"})
 
+
 @router.post("/run-prediction")
 def predict(request: PredictionRequest):
     try:
-        metrics_df = run_prediction(model_type=request.model_type)
-        return metrics_df.to_dict(orient="records")
+        metrics_df, feature_importance_df = run_prediction(model_type=request.model_type)
+
+        return {
+            "metrics": metrics_df.to_dict(orient="records"),
+            "feature_importance": feature_importance_df.to_dict(orient="records")
+        }
+
     except ValueError as e:
         return JSONResponse(status_code=400, content={"error": str(e)})
+
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": f"Unexpected error: {str(e)}"})

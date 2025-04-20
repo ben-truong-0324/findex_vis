@@ -866,6 +866,6 @@ def run_prediction(model_type: str = "Default Decision Tree"):
         for model_name, model_results in results_dt.items()
     }
 
-    metrics_df, _, _ = ml_perf_eval_by_country(test_results_df, trained_models)
+    metrics_df, feature_importance_df, _ = ml_perf_eval_by_country(test_results_df, trained_models)
 
-    return metrics_df
+    return metrics_df, feature_importance_df

@@ -39,6 +39,7 @@ minikube service mlapi-service
 
 #for troubleshooting
 kubectl get pods
+kubectl get services
 kubectl describe pod <pod-name> #see why pod is failing outward
 kubectl logs <pod-name> #see why pod fail inward
 ```
