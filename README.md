@@ -20,7 +20,7 @@ conda env create -f environment.yml
 conda env update --file environment.yml --prune
 conda env update --file environment.yml
 conda activate ml_general
-python -m findex.ml
+python -m mlAPI.ml
 
 # uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 uvicorn findex.main:app --host 0.0.0.0 --port 8000 --reload

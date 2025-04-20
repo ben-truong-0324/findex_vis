@@ -1,7 +1,7 @@
-from config import *
-from src.models import *
-from utils import *
-from tests import *
+from mlAPI.config import *
+# from src.models import *
+from mlAPI.utils import *
+from mlAPI.tests import *
 
 import mlAPI.etl as etl
 import mlAPI.plots as plots
@@ -474,10 +474,10 @@ def train_and_evaluate_dt(X_train, y_train, X_test, y_test, pred_type = "classif
     # Fit models
     models = {
         "Default Decision Tree": dt,
-        # "Bagging": bagging,
+        "Bagging": bagging,
         # "Boosting with Decision Tree": boosting,
        
-        # "Random Forest": rf,
+        "Random Forest": rf,
         # "Histogram-based Gradient Boosting": hist_gb,
         # "Tuned Decision Tree (GridSearch)": grid_search,
     }
@@ -643,18 +643,28 @@ def economy_stratified_split(X, y, test_size=TEST_SIZE, random_state=GT_ID):
     if os.path.exists(ECONOMY_SAVE_PATH):
         train_indices = []
         test_indices = []
-        X_copy["economy_code"] = pd.read_pickle(ECONOMY_SAVE_PATH)
+        saved_columns = pd.read_pickle(ECONOMY_SAVE_PATH)
+        print(X_copy.columns)
+        print(saved_columns.columns)
+        X_copy[['economy', 'pop_adult', 'regionwb']] = saved_columns[[
+                                                    'economy', 'pop_adult', 'regionwb'
+                                                ]]
+        
+        #also get #also return  y_test_population, y_test_region  from here
         print(f"Loaded economy coding from: {ECONOMY_SAVE_PATH}")
-        for economy in X_copy["economy_code"].unique():
-            econ_indices = X_copy[X_copy["economy_code"] == economy].index
+        for economy in X_copy["economy"].unique():
+            econ_indices = X_copy[X_copy["economy"] == economy].index
             econ_train, econ_test = train_test_split(econ_indices, test_size=test_size, random_state=random_state)
             train_indices.extend(econ_train)
             test_indices.extend(econ_test)
 
-        y_test_economy_codes = X_copy.loc[test_indices, "economy_code"].copy()
-        X_copy = X_copy.drop(columns = ['economy_code'])
+        y_test_economy = X_copy.loc[test_indices, "economy"].copy()
+        y_test_population = X_copy.loc[test_indices, "pop_adult"].copy()
+        y_test_region = X_copy.loc[test_indices, "regionwb"].copy()
+        X_copy = X_copy.drop(columns = ['economy','regionwb', 'pop_adult'])
         return X_copy.loc[train_indices], X_copy.loc[test_indices], \
-            y.loc[train_indices], y.loc[test_indices], y_test_economy_codes
+            y.loc[train_indices], y.loc[test_indices], \
+            y_test_economy, y_test_population, y_test_region
     else:
         print("Economy save path not found. Using random split.")
         return train_test_split(X, y, test_size=test_size, random_state=random_state) + (None,)
@@ -664,7 +674,8 @@ def economy_stratified_split(X, y, test_size=TEST_SIZE, random_state=GT_ID):
 
 def check_etl():
     X, y = etl.get_data()
-    X_train, X_test, y_train, y_test, y_test_economy_codes = economy_stratified_split(X, y)
+    print(y)
+    X_train, X_test, y_train, y_test, y_test_economy, y_test_population, y_test_region = economy_stratified_split(X, y)
    
     test_data_etl_input_check(X,y,X_train, X_test, y_train, y_test, show = True)
     ####
@@ -673,7 +684,7 @@ def check_etl():
     # plots.analyze_dim_reduc(X_train,y_train,X_test, y_test)
     
     print("======> Data verification complete")
-    return X,y,X_train, X_test, y_train, y_test, y_test_economy_codes
+    return X,y,X_train, X_test, y_train, y_test, y_test_economy, y_test_population, y_test_region
 
 def get_solutions(X_train):
     X_test, solution_id = etl.get_test_data()
@@ -754,7 +765,7 @@ def main():
     do_skl_train = 1
     do_torch_train = 0
     start_time = time.time()
-    X,y,X_train, X_test, y_train, y_test, y_test_economy_codes  = check_etl()
+    X,y,X_train, X_test, y_train, y_test, y_test_economy_codes, y_test_population, y_test_region  = check_etl()
     check_data_info(X, y, X_train, X_test, y_train, y_test, show = False)
     print(f"Time to load data: {time.time() - start_time}s")
     ###### Sklearn models (just DT for now)
@@ -764,18 +775,27 @@ def main():
 
         save_results(results_dt, f"{Y_PRED_OUTDIR}/test{DRAFT_VER_A3}/dt_results.pkl")
         save_trained_models(results_dt, f"{Y_PRED_OUTDIR}/test{DRAFT_VER_A3}/models/")
+        # print(y_test)
         test_results_df = X_test.copy()
         test_results_df["y_test"] = y_test.values  
         for model_name, model_results in results_dt.items():
             model_name_formatted = model_name.lower().replace(" ", "_")
             test_results_df[f"y_pred_{model_name_formatted}"] = model_results["y_pred"]  #ea. predictions
+        #
         test_results_df["economy_code"] = y_test_economy_codes  
+        
+         
+
 
         # serialize to pickle
         save_results(test_results_df, f"{Y_PRED_OUTDIR}/{DRAFT_VER_A3}/raw_test_set_with_pred.pkl")
 
         trained_models = {name.lower().replace(" ", "_"): model_results["model"] for name, model_results in results_dt.items()}
+        test_results_df["population"] = y_test_population
+        test_results_df["regionwb"] = y_test_region
         metrics_df, feature_importance_df, metrics_list_by_cluster = ml_perf_eval_by_country(test_results_df, trained_models)
+        
+        
         save_results(metrics_df, f"{Y_PRED_OUTDIR}/test{DRAFT_VER_A3}/metrics_by_countries.pkl")
         save_results(feature_importance_df, f"{Y_PRED_OUTDIR}/test{DRAFT_VER_A3}/ft_importance.pkl")
         save_results(metrics_list_by_cluster, f"{Y_PRED_OUTDIR}/test{DRAFT_VER_A3}/metrics_by_cluster.pkl")
@@ -802,7 +822,7 @@ if __name__ == "__main__":
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Torch will be running on {device}")
     ####################
-    etl.prelim_view(TRAIN_PATH)
+    # etl.prelim_view(TRAIN_PATH)
     
     main()
     
@@ -811,139 +831,139 @@ if __name__ == "__main__":
 
 
 
-def train_and_evaluate_dt():
+# def train_and_evaluate_dt():
 
-    # Initialize models
-    if pred_type == "classifier":
-        dt = DecisionTreeClassifier(random_state=GT_ID)
-        boosting = GradientBoostingClassifier(n_estimators=N_ESTIMATOR, learning_rate=0.001, random_state=GT_ID)
-        rf = RandomForestClassifier(n_estimators=N_ESTIMATOR, random_state=GT_ID)
-        extra_trees = ExtraTreesClassifier(n_estimators=N_ESTIMATOR, random_state=GT_ID)
-        hist_gb = HistGradientBoostingClassifier(max_iter=N_ESTIMATOR, random_state=GT_ID)
-        svm_model = SVC(kernel='rbf', C=1, gamma='scale', random_state=42)  # No change needed, it's already a classifier
-        bagging = BaggingClassifier(estimator=rf, n_estimators=N_ESTIMATOR, random_state=GT_ID)
-    else:
-        dt = DecisionTreeRegressor(random_state=GT_ID)
-        boosting = GradientBoostingRegressor(n_estimators=N_ESTIMATOR, learning_rate=0.001, random_state=GT_ID)
-        rf = RandomForestRegressor(n_estimators=N_ESTIMATOR, random_state=GT_ID)
-        extra_trees = ExtraTreesRegressor(n_estimators=N_ESTIMATOR, random_state=GT_ID)
-        hist_gb = HistGradientBoostingRegressor(max_iter=N_ESTIMATOR, random_state=GT_ID)
-        svm_model = SVC(kernel='rbf', C=1, gamma='scale', random_state=42)
-        bagging = BaggingRegressor(estimator = rf, n_estimators=N_ESTIMATOR, random_state=GT_ID)
+#     # Initialize models
+#     if pred_type == "classifier":
+#         dt = DecisionTreeClassifier(random_state=GT_ID)
+#         boosting = GradientBoostingClassifier(n_estimators=N_ESTIMATOR, learning_rate=0.001, random_state=GT_ID)
+#         rf = RandomForestClassifier(n_estimators=N_ESTIMATOR, random_state=GT_ID)
+#         extra_trees = ExtraTreesClassifier(n_estimators=N_ESTIMATOR, random_state=GT_ID)
+#         hist_gb = HistGradientBoostingClassifier(max_iter=N_ESTIMATOR, random_state=GT_ID)
+#         svm_model = SVC(kernel='rbf', C=1, gamma='scale', random_state=42)  # No change needed, it's already a classifier
+#         bagging = BaggingClassifier(estimator=rf, n_estimators=N_ESTIMATOR, random_state=GT_ID)
+#     else:
+#         dt = DecisionTreeRegressor(random_state=GT_ID)
+#         boosting = GradientBoostingRegressor(n_estimators=N_ESTIMATOR, learning_rate=0.001, random_state=GT_ID)
+#         rf = RandomForestRegressor(n_estimators=N_ESTIMATOR, random_state=GT_ID)
+#         extra_trees = ExtraTreesRegressor(n_estimators=N_ESTIMATOR, random_state=GT_ID)
+#         hist_gb = HistGradientBoostingRegressor(max_iter=N_ESTIMATOR, random_state=GT_ID)
+#         svm_model = SVC(kernel='rbf', C=1, gamma='scale', random_state=42)
+#         bagging = BaggingRegressor(estimator = rf, n_estimators=N_ESTIMATOR, random_state=GT_ID)
 
     
-    param_grid = {  'max_depth': [3, 5, 10],
-                    'min_samples_split': [2, 5],
-                    'min_samples_leaf': [1, 2]}
-    grid_search = GridSearchCV(dt, param_grid, cv=5, scoring='neg_mean_squared_error')
+#     param_grid = {  'max_depth': [3, 5, 10],
+#                     'min_samples_split': [2, 5],
+#                     'min_samples_leaf': [1, 2]}
+#     grid_search = GridSearchCV(dt, param_grid, cv=5, scoring='neg_mean_squared_error')
     
-    # Fit models
-    models = {
-        "Default Decision Tree": dt,
-        # "Bagging": bagging,
-        # "Boosting with Decision Tree": boosting,
+#     # Fit models
+#     models = {
+#         "Default Decision Tree": dt,
+#         # "Bagging": bagging,
+#         # "Boosting with Decision Tree": boosting,
        
-        # "Random Forest": rf,
-        # "Histogram-based Gradient Boosting": hist_gb,
-        # "Tuned Decision Tree (GridSearch)": grid_search,
-    }
+#         # "Random Forest": rf,
+#         # "Histogram-based Gradient Boosting": hist_gb,
+#         # "Tuned Decision Tree (GridSearch)": grid_search,
+#     }
     
-    results = {}
-    # print("getting smote")
-    # smote = SMOTE(sampling_strategy='auto', random_state=42)
-    # X_train, y_train = smote.fit_resample(X_train, y_train)
-    for model_name, model in models.items():
-        print("#"*18)
-        print(model,model_name)
-        start_time = time.time()
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
+#     results = {}
+#     # print("getting smote")
+#     # smote = SMOTE(sampling_strategy='auto', random_state=42)
+#     # X_train, y_train = smote.fit_resample(X_train, y_train)
+#     for model_name, model in models.items():
+#         print("#"*18)
+#         print(model,model_name)
+#         start_time = time.time()
+#         model.fit(X_train, y_train)
+#         y_pred = model.predict(X_test)
 
-        if np.any(np.isnan(y_test)):
-            print("Warning: NaN values found in y_test")
-        if np.any(np.isnan(y_pred)):
-            print("Warning: NaN values found in y_pred")
+#         if np.any(np.isnan(y_test)):
+#             print("Warning: NaN values found in y_test")
+#         if np.any(np.isnan(y_pred)):
+#             print("Warning: NaN values found in y_pred")
 
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        model_path = os.path.join(
-            MODELS_OUTDIR,
-            f"{model_name}_{timestamp}.joblib"
-        )
+#         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+#         model_path = os.path.join(
+#             MODELS_OUTDIR,
+#             f"{model_name}_{timestamp}.joblib"
+#         )
 
-        if PRED_TYPE == "classifier":
-            metric_average = 'binary' if len(np.unique(y_test)) == 2 else 'weighted'
-            accuracy = accuracy_score(y_test, y_pred)
-            precision = precision_score(y_test, y_pred, average=metric_average)  
-            recall = recall_score(y_test, y_pred, average=metric_average)  
-            f1 = f1_score(y_test, y_pred, average=metric_average)  
-            roc_auc = roc_auc_score(y_test, y_pred) if len(np.unique(y_test)) == 2 else 0  
-            model_params = model.get_params() if hasattr(model, 'get_params') else 0
-            results[model_name] = {
-                "Accuracy": accuracy,
-                "Precision": precision,
-                "Recall": recall,
-                "F1_score": f1,
-                "ROC_AUC": roc_auc,
-                "runtime": time.time() - start_time,
-                'params': model_params,
-                "y_pred": y_pred,
-                "model": model,
+#         if PRED_TYPE == "classifier":
+#             metric_average = 'binary' if len(np.unique(y_test)) == 2 else 'weighted'
+#             accuracy = accuracy_score(y_test, y_pred)
+#             precision = precision_score(y_test, y_pred, average=metric_average)  
+#             recall = recall_score(y_test, y_pred, average=metric_average)  
+#             f1 = f1_score(y_test, y_pred, average=metric_average)  
+#             roc_auc = roc_auc_score(y_test, y_pred) if len(np.unique(y_test)) == 2 else 0  
+#             model_params = model.get_params() if hasattr(model, 'get_params') else 0
+#             results[model_name] = {
+#                 "Accuracy": accuracy,
+#                 "Precision": precision,
+#                 "Recall": recall,
+#                 "F1_score": f1,
+#                 "ROC_AUC": roc_auc,
+#                 "runtime": time.time() - start_time,
+#                 'params': model_params,
+#                 "y_pred": y_pred,
+#                 "model": model,
 
-            }
-            log_entry = (
-                f"Model: {model_name}\n"  # Ensure this is properly indented
-                f"Saved Path: {model_path}\n"
-                f"Timestamp: {timestamp}\n"
-                f"Accuracy: {results[model_name]['Accuracy']:.4f}\n"
-                f"Precision: {results[model_name]['Precision']:.4f}\n"
-                f"Recall: {results[model_name]['Recall']:.4f}\n"
-                f"F1 Score: {results[model_name]['F1_score']:.4f}\n"
-                f"ROC AUC: {results[model_name]['ROC_AUC']:.4f}\n"
-                f"Runtime: {results[model_name]['runtime']:.2f} seconds\n"
-                f"Model Hyperparameters: {model_params}\n"
-                f"{'#' * 50}\n"
-            )
-        else:
-            mse = mean_squared_error(y_test, y_pred)
-            mae = mean_absolute_error(y_test, y_pred)
-            r2 = r2_score(y_test, y_pred)
-            rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-            rmlse = np.sqrt(mean_squared_error(np.log1p(y_test), np.log1p(y_pred)))
-            model_params = model.get_params() if hasattr(model, 'get_params') else None
+#             }
+#             log_entry = (
+#                 f"Model: {model_name}\n"  # Ensure this is properly indented
+#                 f"Saved Path: {model_path}\n"
+#                 f"Timestamp: {timestamp}\n"
+#                 f"Accuracy: {results[model_name]['Accuracy']:.4f}\n"
+#                 f"Precision: {results[model_name]['Precision']:.4f}\n"
+#                 f"Recall: {results[model_name]['Recall']:.4f}\n"
+#                 f"F1 Score: {results[model_name]['F1_score']:.4f}\n"
+#                 f"ROC AUC: {results[model_name]['ROC_AUC']:.4f}\n"
+#                 f"Runtime: {results[model_name]['runtime']:.2f} seconds\n"
+#                 f"Model Hyperparameters: {model_params}\n"
+#                 f"{'#' * 50}\n"
+#             )
+#         else:
+#             mse = mean_squared_error(y_test, y_pred)
+#             mae = mean_absolute_error(y_test, y_pred)
+#             r2 = r2_score(y_test, y_pred)
+#             rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+#             rmlse = np.sqrt(mean_squared_error(np.log1p(y_test), np.log1p(y_pred)))
+#             model_params = model.get_params() if hasattr(model, 'get_params') else None
 
-            results[model_name] = {
-                "MSE": mse,
-                "MAE": mae,
-                "RMSE": rmse,
-                "RMLSE": rmlse,
-                "R2": r2,
-                "runtime": time.time() - start_time,
-                'params': model_params,
-                "y_pred": y_pred,
-            }
-            log_entry = (
-                f"Model: {model_name}\n"
-                f"Saved Path: {model_path}\n"
-                f"Timestamp: {timestamp}\n"
-                f"MSE: {results[model_name]['MSE']:.4f}\n"
-                f"MAE: {results[model_name]['MAE']:.4f}\n"
-                f"RMSE: {results[model_name]['RMSE']:.4f}\n"
-                f"RMLSE: {results[model_name]['RMLSE']:.4f}\n"
-                f"R2: {results[model_name]['R2']:.4f}\n"
-                f"Runtime: {results[model_name]['runtime']:.2f} seconds\n"
-                f"Model Hyperparameters: {model_params}\n"  
-                f"{'#' * 50}\n"
-            )
+#             results[model_name] = {
+#                 "MSE": mse,
+#                 "MAE": mae,
+#                 "RMSE": rmse,
+#                 "RMLSE": rmlse,
+#                 "R2": r2,
+#                 "runtime": time.time() - start_time,
+#                 'params': model_params,
+#                 "y_pred": y_pred,
+#             }
+#             log_entry = (
+#                 f"Model: {model_name}\n"
+#                 f"Saved Path: {model_path}\n"
+#                 f"Timestamp: {timestamp}\n"
+#                 f"MSE: {results[model_name]['MSE']:.4f}\n"
+#                 f"MAE: {results[model_name]['MAE']:.4f}\n"
+#                 f"RMSE: {results[model_name]['RMSE']:.4f}\n"
+#                 f"RMLSE: {results[model_name]['RMLSE']:.4f}\n"
+#                 f"R2: {results[model_name]['R2']:.4f}\n"
+#                 f"Runtime: {results[model_name]['runtime']:.2f} seconds\n"
+#                 f"Model Hyperparameters: {model_params}\n"  
+#                 f"{'#' * 50}\n"
+#             )
         
-        # Append the log entry to the text file
-        with open(MODEL_ALL_LOG_FILE, "a") as log_file:
-            log_file.write(log_entry)
-        ###############
-        # evaluate_metrics_in_context(y_test, y_pred, model_name)
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+#         # Append the log entry to the text file
+#         with open(MODEL_ALL_LOG_FILE, "a") as log_file:
+#             log_file.write(log_entry)
+#         ###############
+#         # evaluate_metrics_in_context(y_test, y_pred, model_name)
+#         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        plots.plot_predictions( y_test, y_pred,1, model_name,
-                f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_diff_{model_name}.png",
-                # f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_hist_{model_name}.png"
-                )
-    return results
+#         plots.plot_predictions( y_test, y_pred,1, model_name,
+#                 f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_diff_{model_name}.png",
+#                 # f"{AGGREGATED_OUTDIR}/{timestamp}_pred_actual_hist_{model_name}.png"
+#                 )
+#     return results

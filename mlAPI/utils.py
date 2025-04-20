@@ -12,9 +12,9 @@ import pickle
 import random
 from copy import deepcopy
 import mlAPI.hypotheses
-from src.models import *
-from src.models_reg import *
-from config import *
+# from src.models import *
+# from src.models_reg import *
+from mlAPI.config import *
 import mlAPI.plots as plots
 from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
 from sklearn.inspection import permutation_importance
@@ -882,7 +882,7 @@ def ml_perf_eval_by_country(test_results_df, trained_models):
     model_pred_cols = [col for col in test_results_df.columns if col.startswith("y_pred_")]
 
     # Get feature columns (excluding y_test, economy_code, and model predictions)
-    feature_columns = test_results_df.drop(columns=["y_test", "economy_code"] + model_pred_cols).columns
+    feature_columns = test_results_df.drop(columns=["y_test", "economy_code", "population", "regionwb"] + model_pred_cols).columns
 
     for model_col in model_pred_cols:
         model_name = model_col.replace("y_pred_", "")  # Extract model name
@@ -920,6 +920,8 @@ def ml_perf_eval_by_country(test_results_df, trained_models):
             y_pred = group[model_col]
             X_subset = group[feature_columns]
             econ_code_size = len(group)
+            population = group["population"].iloc[0]
+            regionwb   = group["regionwb"].iloc[0]
 
             # Compute performance metrics
             accuracy = accuracy_score(y_true, y_pred)
@@ -929,6 +931,8 @@ def ml_perf_eval_by_country(test_results_df, trained_models):
             metrics_list.append({
                 "economy_code": econ_code,
                 "econ_size": econ_code_size,
+                "regionwb":     regionwb,
+                "population":   population,
                 "model": model_name,
                 "accuracy": accuracy,
                 "f1_score": f1,

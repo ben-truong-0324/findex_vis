@@ -2,10 +2,10 @@ import socket
 
 # Determine the hostname
 hostname = socket.gethostname()
-if hostname == "Khais-MacBook-Pro.local" or hostname == "Khais-MBP.attlocal.net":  
-    from config_mac import *  
-else:
-    from config_cuda import * 
+# if hostname == "Khais-MacBook-Pro.local" or hostname == "Khais-MBP.attlocal.net":  
+#     from mlAPI.config_mac import *  
+# else:
+#     from mlAPI.config_cuda import * 
 
 import os
 
@@ -14,7 +14,7 @@ TRAIN_PATH_big = os.path.join(os.getcwd(), 'data', 'dataset_2025-02-24T21_33_33.
 # TRAIN_PATH_2014 = os.path.join(os.getcwd(), 'data', 'findex2014_micro_world.csv') #schema mismatch, need manual patch :(
 TRAIN_PATH_2017 = os.path.join(os.getcwd(), 'data', 'findex2017_micro_world.csv')
 TRAIN_PATH_2021 = os.path.join(os.getcwd(), 'data', 'findex2021_micro_world_139countries.csv')
-
+GT_ID = 42
 
 TEST_PATH = os.path.join(os.getcwd(), 'data', 'test.csv')
 PROCESSED_TEST_PATH = os.path.join(os.getcwd(), 'data', 'test_processed.csv')
@@ -23,10 +23,10 @@ DATASET_SELECTION = "findex"
 PRED_TYPE = "classifier" #or "regression", "classifier"
 
 EVAL_FUNC_METRIC = 'accuracy' #'mae'  #rmse #'f1' # 'accuracy' 
-N_ESTIMATOR = 30
+N_ESTIMATOR = 14
 TEST_SIZE = .3
 TARGET_COL = "fin7" #fin7, fin8b - criteria: <40% null rows and interesting
-UL_CLUSTER_COUNT = 7 #3, 5, 7, 12 - criteria: ~ arbitrary
+UL_CLUSTER_COUNT = 6 #3, 5, 7, 12 - criteria: ~ arbitrary
 ##############################
 TRAIN_PATH = TRAIN_PATH_2021
 YEAR_FILTER = 2021 #2021, 2017, 2014, 2011 - criteria: use whatever year is in main name of csv
@@ -313,6 +313,7 @@ MODIFIED_DATA_DICT = {key: value.lower().replace(" ", "_") for key, value in FIN
 COLUMNS_TO_KEEP =  [
     "economy", #duplicate with econoomy code
     "economycode",
+    "regionwb",
     "pop_adult", #gonna need to log scale 
     "female", 
     "educ", "inc_q", "account", "account_fin", "fin7", "fin8b", "fin2", "fin14_1", "fin14a", 

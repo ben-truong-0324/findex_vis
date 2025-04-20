@@ -8,7 +8,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import MinMaxScaler
 
 import time
-from config import *
+from mlAPI.config import *
 import mlAPI.plots as plots
 
 # from config import *
@@ -254,12 +254,11 @@ def get_data():
 
                 available_columns = [col for col in COLUMNS_TO_KEEP + [TARGET_COL] if col in df.columns]
                 df = df[available_columns]
-                print(df.head())
-                print("yo")
+                print(df.columns)
 
                 # df = df[COLUMNS_TO_KEEP+[TARGET_COL] if TARGET_COL not in COLUMNS_TO_KEEP else COLUMNS_TO_KEEP ]
-                economy_column = df['economy' ]  # Store non-numerical data for later
-                df = df.drop(columns=['economycode', 'economy']) 
+                economy_column = df[['economy', 'pop_adult', 'regionwb']]  # Store non-numerical data for later
+                df = df.drop(columns=['economycode', 'economy', 'regionwb']) 
                 df = df.dropna()
                 if "year" in df.columns:
                     df = df[df["year"] == YEAR_FILTER]
@@ -289,9 +288,9 @@ def get_data():
             #load pickl
             df = pd.read_pickle(PROCESSED_TRAIN_PATH)
         # target_col = MODIFIED_DATA_DICT[TARGET_COL]
-        target_col = TARGET_COL
-        Y_df = df[target_col]  # Target variable
-        X_df = df.drop(columns=[ target_col])
+        df = df.loc[:, ~df.columns.duplicated()]
+        Y_df = df[TARGET_COL]  # Target variable
+        X_df = df.drop(columns=[ TARGET_COL])
 
     else: 
         print("#"*18)

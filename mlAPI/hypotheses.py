@@ -3,7 +3,7 @@ from scipy.stats import ttest_1samp
 import pickle
 
 import os
-from config import *
+from mlAPI.config import *
 
 def run_dred_improves_purity_score_hypo_test(purity_scores, thresholds):
     """

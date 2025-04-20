@@ -10,7 +10,7 @@ from sklearn.datasets import make_blobs
 
 import mlAPI.ml_scripts
 
-from config import *
+from mlAPI.config import *
 
 import pandas as pd
 import numpy as np
