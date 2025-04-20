@@ -880,6 +880,8 @@ def ml_perf_eval_by_country(test_results_df, trained_models):
 
     # Extract model prediction columns (e.g., y_pred_decision_tree)
     model_pred_cols = [col for col in test_results_df.columns if col.startswith("y_pred_")]
+    print(f"🧠 Found model prediction columns: {model_pred_cols}")
+    print(test_results_df.head())
 
     # Get feature columns (excluding y_test, economy_code, and model predictions)
     feature_columns = test_results_df.drop(columns=["y_test", "economy_code", "population", "regionwb"] + model_pred_cols).columns
@@ -896,6 +898,8 @@ def ml_perf_eval_by_country(test_results_df, trained_models):
             for cluster_label, cluster_group in clustered:
                 y_true = cluster_group["y_test"]
                 y_pred = cluster_group[model_col]
+                # Debug outputs
+                
 
                 # Compute performance metrics for each cluster
                 accuracy = accuracy_score(y_true, y_pred)
@@ -955,9 +959,7 @@ def ml_perf_eval_by_country(test_results_df, trained_models):
     # Convert lists to DataFrames
     metrics_df = pd.DataFrame(metrics_list)
     feature_importance_df = pd.DataFrame(feature_importance_list)
-    print(metrics_df)
-    print(feature_importance_df)
-    print(metrics_list_by_cluster) 
+
     return metrics_df, feature_importance_df, metrics_list_by_cluster
 
 

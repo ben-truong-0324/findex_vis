@@ -247,6 +247,7 @@ def do_ul_cluster(X_df):
 def get_data():
     print(f"Getting data for {DATASET_SELECTION}")
     if "findex" in DATASET_SELECTION:
+        print(PROCESSED_TRAIN_PATH)
         if not os.path.exists(PROCESSED_TRAIN_PATH):
             try:
                 df = pd.read_csv(TRAIN_PATH, encoding="ISO-8859-1")
@@ -254,12 +255,22 @@ def get_data():
 
                 available_columns = [col for col in COLUMNS_TO_KEEP + [TARGET_COL] if col in df.columns]
                 df = df[available_columns]
-                print(df.columns)
+                df = df.loc[:, ~df.columns.duplicated()]
 
                 # df = df[COLUMNS_TO_KEEP+[TARGET_COL] if TARGET_COL not in COLUMNS_TO_KEEP else COLUMNS_TO_KEEP ]
                 economy_column = df[['economy', 'pop_adult', 'regionwb']]  # Store non-numerical data for later
                 df = df.drop(columns=['economycode', 'economy', 'regionwb']) 
+                print(f"🧪 Target col: {TARGET_COL}")
+                print(f"📉 Before dropna: df shape = {df.shape}")
+                print(f"📊 All columns: {df.columns.tolist()}")
+                feature_cols = [col for col in df.columns if col != TARGET_COL]
+                print("🧐 Null counts per column BEFORE dropna:\n", df[feature_cols].isnull().sum().sort_values(ascending=False))
+                print(f"🧪 Unique values BEFORE filtering:\n{df[TARGET_COL].value_counts(dropna=False)}")
                 df = df.dropna()
+               
+                print(f"📉 After dropna: df shape = {df.shape}")
+                print(f"🧪 Unique values AFTER dropna:\n{df[TARGET_COL].value_counts(dropna=False)}")
+
                 if "year" in df.columns:
                     df = df[df["year"] == YEAR_FILTER]
                 else:
@@ -288,9 +299,9 @@ def get_data():
             #load pickl
             df = pd.read_pickle(PROCESSED_TRAIN_PATH)
         # target_col = MODIFIED_DATA_DICT[TARGET_COL]
-        df = df.loc[:, ~df.columns.duplicated()]
         Y_df = df[TARGET_COL]  # Target variable
         X_df = df.drop(columns=[ TARGET_COL])
+        print(f"✅ Final target value distribution:\n{Y_df.value_counts(dropna=False)}")
 
     else: 
         print("#"*18)
@@ -305,7 +316,8 @@ def get_data():
         # If it's 2D, convert to Pandas DataFrame
         Y_df = pd.DataFrame(Y_df)
 
-    
+    print(f"   🔸 Y_df shape: {Y_df.shape}, unique: {Y_df.unique()}")
+    print(f"   🔸 First 5 y: {Y_df.head().tolist()}")
     return X_df, Y_df
 
 def graph_raw_data(X_df, Y_df):

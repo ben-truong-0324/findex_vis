@@ -1,5 +1,5 @@
 import requests
-from flask import Flask, render_template, send_from_directory, jsonify,request
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify
 import json
 import os
 
@@ -26,15 +26,20 @@ def get_data(filename):
 
 @app.route('/run-prediction', methods=['POST'])
 def run_prediction_route():
+    print("running pred", flush=True)
     try:
         model_type = request.form.get('model_type', 'Default Decision Tree')
-        # fastapi_url = f"http://mlapi-service/api/ml/run-prediction?model={model_type}"
-        # response = requests.post(fastapi_url, timeout=10)
+        print(f"🧠 [Flask] Selected model_type: {model_type}", flush=True)
+
         fastapi_url = "http://mlapi-service/api/ml/run-prediction"
-        response = requests.post(fastapi_url, json={"model_type": model_type}, timeout=10)
+        print(f"📡 [Flask] Sending POST to: {fastapi_url}", flush=True)
+
+        response = requests.post(fastapi_url, json={"model_type": model_type}, timeout=300)
+        print(f"✅ [Flask] FastAPI responded with status code: {response.status_code}", flush=True)
+
         response.raise_for_status()
         data = response.json()
-
+        
         # Write metrics data
         metrics_path = "/app/data/metrics_by_countries.json"
         with open(metrics_path, "w") as f:
@@ -44,6 +49,11 @@ def run_prediction_route():
         importance_path = "/app/data/ft_importance.json"
         with open(importance_path, "w") as f:
             json.dump(data.get("feature_importance", []), f, indent=2)
+
+        # Write metrics_list_by_cluster data
+        cluster_path = "/app/data/metrics_by_cluster.json"
+        with open(cluster_path, "w") as f:
+            json.dump(data.get("metrics_list_by_cluster", []), f, indent=2)
 
         # Redirect to home — D3 will load the new files automatically
         return redirect(url_for("index"))

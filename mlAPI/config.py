@@ -26,7 +26,7 @@ EVAL_FUNC_METRIC = 'accuracy' #'mae'  #rmse #'f1' # 'accuracy'
 N_ESTIMATOR = 14
 TEST_SIZE = .3
 TARGET_COL = "fin7" #fin7, fin8b - criteria: <40% null rows and interesting
-UL_CLUSTER_COUNT = 6 #3, 5, 7, 12 - criteria: ~ arbitrary
+UL_CLUSTER_COUNT = 7 #3, 5, 7, 12 - criteria: ~ arbitrary
 ##############################
 TRAIN_PATH = TRAIN_PATH_2021
 YEAR_FILTER = 2021 #2021, 2017, 2014, 2011 - criteria: use whatever year is in main name of csv
@@ -316,7 +316,7 @@ COLUMNS_TO_KEEP =  [
     "regionwb",
     "pop_adult", #gonna need to log scale 
     "female", 
-    "educ", "inc_q", "account", "account_fin", "fin7", "fin8b", "fin2", "fin14_1", "fin14a", 
+    "educ", "inc_q", "account", "account_fin", "fin7", "fin2", "fin14_1", "fin14a", 
     "fin14a1", "fin14b", "fin16", "fin17a", "fin20", "fin22a", "fin22b", 
     "fin24", "fin30", "fin32", "fin37", "fin38", "fin44a", "fin44b", 
     "fin44c", "fin44d", "saved", "borrowed", "receive_wages", "receive_transfers", 

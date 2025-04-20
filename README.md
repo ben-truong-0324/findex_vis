@@ -16,30 +16,24 @@ Containerized Deployment: The entire application is containerized using Docker.
 Download/copy data into ./data/
 
 ```bash
-#open /Applications/Docker.app
+On Mac:
+In first terminal:
 minikube start --driver=docker
-
-eval $(minikube docker-env)  #set local docker env to minikube. this is for mac
-#& minikube -p minikube docker-env --shell=cmd | Invoke-Expression #powershell
-#@FOR /f "tokens=*" %i IN ('minikube docker-env --shell=cmd') DO @%i #windows anaconda prompt
-
 minikube mount ./data:/mnt/data
 
-eval $(minikube docker-env) #in new shell, use corresponding command
-docker build -t flask_app_image ./flask_app
-kubectl apply -f k8s/fe_flask.yaml
-kubectl apply -f k8s/flask_app_service.yaml
-minikube service flask_app_service
-kubectl get pods 
+In 2nd terminal: 
+chmod +x deploy.sh
+./deploy.sh
 
-eval $(minikube docker-env) #in new shell, use corresponding command
-docker build -t mlapi_image ./mlAPI
-kubectl apply -f k8s/mlAPI.yaml
-minikube service mlapi-service
+On Windows, at root folder findex_vis/
+deploy_win.bat
 
 #for troubleshooting
+kubectl logs -l app=mlapi
+kubectl logs -l app=flask-app
 kubectl get pods
 kubectl get services
 kubectl describe pod <pod-name> #see why pod is failing outward
 kubectl logs <pod-name> #see why pod fail inward
+kubectl logs deployment/mlapi -f
 ```

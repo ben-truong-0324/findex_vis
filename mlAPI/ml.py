@@ -683,13 +683,13 @@ def economy_stratified_split(X, y, test_size=TEST_SIZE, random_state=GT_ID):
 
 def check_etl():
     X, y = etl.get_data()
-    print(y)
+    # print(y)
     X_train, X_test, y_train, y_test, y_test_economy, y_test_population, y_test_region = economy_stratified_split(X, y)
    
-    test_data_etl_input_check(X,y,X_train, X_test, y_train, y_test, show = True)
+    # test_data_etl_input_check(X,y,X_train, X_test, y_train, y_test, show = True)
     ####
-    etl.graph_raw_data(X, y)
-    plots.analyze_feature_importance(X_train, y_train, f"")
+    # etl.graph_raw_data(X, y)
+    # plots.analyze_feature_importance(X_train, y_train, f"")
     # plots.analyze_dim_reduc(X_train,y_train,X_test, y_test)
     
     print("======> Data verification complete")
@@ -844,7 +844,7 @@ def run_prediction(model_type: str = "Default Decision Tree"):
     np.random.seed(GT_ID)
 
     X, y, X_train, X_test, y_train, y_test, y_test_economy_codes, y_test_population, y_test_region = check_etl()
-    check_data_info(X, y, X_train, X_test, y_train, y_test, show=False)
+    # check_data_info(X, y, X_train, X_test, y_train, y_test, show=False)
 
     # Train selected model(s)
     results_dt = train_and_evaluate_dt(X_train, y_train, X_test, y_test, model_type=model_type)
@@ -860,12 +860,31 @@ def run_prediction(model_type: str = "Default Decision Tree"):
     test_results_df["population"] = y_test_population
     test_results_df["regionwb"] = y_test_region
 
+
     # Just the selected models
     trained_models = {
         model_name.lower().replace(" ", "_"): model_results["model"]
         for model_name, model_results in results_dt.items()
     }
 
-    metrics_df, feature_importance_df, _ = ml_perf_eval_by_country(test_results_df, trained_models)
+    metrics_df, feature_importance_df, metrics_list_by_cluster = ml_perf_eval_by_country(test_results_df, trained_models)
+    def ensure_dataframe(results, label=""):
+        if isinstance(results, pd.DataFrame):
+            return results
+        elif isinstance(results, dict):
+            df = pd.DataFrame.from_dict(results, orient="index")
+            return df
+        elif isinstance(results, list):
+            df = pd.DataFrame(results)
+            return df
+        else:
+            print(f"⚠️ Warning: Unsupported format ({type(results)}) for {label}. Returning empty DataFrame.")
+            return pd.DataFrame()
+    
 
-    return metrics_df, feature_importance_df
+    metrics_df = ensure_dataframe(metrics_df, label="metrics_df")
+    feature_importance_df = ensure_dataframe(feature_importance_df, label="feature_importance_df")
+    metrics_list_by_cluster = ensure_dataframe(metrics_list_by_cluster, label="metrics_list_by_cluster")
+
+
+    return metrics_df, feature_importance_df, metrics_list_by_cluster
