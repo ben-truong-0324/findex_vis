@@ -1,30 +1,26 @@
 # Findex Vis
 
-Findex Vis is a web application that visualizes machine learning model predictions on financial survey data. It features a Django backend and an HTML/CSS/D3.js frontend. Machine learning outputs are generated locally and made available for visualization.
+Findex Vis is a web application that visualizes machine learning model predictions on financial survey data. It features a FastAPI backend and an HTML/CSS/D3.js frontend. Machine learning outputs are generated onto mounted drive and made available for visualization.
 
 ## Project Overview
 
-Data is retrieved from [NFIP Data Source](https://www.fema.gov/openfema-data-page/fima-nfip-redacted-claims-v2).  
+Data is retrieved from [WorldBank.org Data Source](https://www.worldbank.org/en/publication/globalfindex/Data).  
 
-Django Backend: Serves data and APIs for the frontend.
+FastAPI Backend: Serves data and APIs for the frontend.
 Frontend with D3.js: Interactive visualizations of ML model predictions.
-Machine Learning Integration: ML scripts run locally, with outputs accessible to the frontend.
-Containerized Deployment: The entire application is containerized using Docker.
+Containerized Deployment: The entire application is containerized using Docker, ready for minikube dev deployment.
 
-
-## Installation and Setup
-Download/copy data into ./data/
-
+## Data Folder Manual add
+Create data folder in root, not included due to size upload limit.
+Download/copy data into ./data/ and make sure to have these files in data:
 ```bash
-On Mac:
-In first terminal:
-minikube start --driver=docker
-minikube mount ./data:/mnt/data
-
-In 2nd terminal: 
-chmod +x deploy.sh
-./deploy.sh
-
+mkdir data
+findex2021_micro_world_139countries.csv
+ft2verbose.json
+world_countries.json
+```
+## Installation and Setup
+```bash
 On Windows, at root folder findex_vis/
 deploy_win.bat
 
