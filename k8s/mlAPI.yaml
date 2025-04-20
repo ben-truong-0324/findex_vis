@@ -15,6 +15,7 @@ spec:
       containers:
       - name: mlapi
         image: mlapi_image
+        imagePullPolicy: Never
         ports:
         - containerPort: 8000  # or whatever your ML API uses
         volumeMounts:

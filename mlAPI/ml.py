@@ -1,11 +1,11 @@
-from mlAPI.config import *
+from config import *
 # from src.models import *
-from mlAPI.utils import *
-from mlAPI.tests import *
+from utils import *
+from tests import *
 
-import mlAPI.etl as etl
-import mlAPI.plots as plots
-import mlAPI.hypotheses as hypotheses
+import etl as etl
+import plots as plots
+import hypotheses as hypotheses
 
 import pickle
 import glob

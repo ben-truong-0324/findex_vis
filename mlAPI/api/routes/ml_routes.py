@@ -4,8 +4,8 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import os
 
-from mlAPI.ml import run_prediction
-from mlAPI.schemas.ml_schemas import PredictionRequest
+from ml import run_prediction
+from schemas.ml_schemas import PredictionRequest
 
 router = APIRouter()
 DATA_DIR = "/app/data"

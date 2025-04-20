@@ -5,9 +5,9 @@ from fastapi_core.event_handlers import start_app_handler, stop_app_handler
 from fastapi.responses import RedirectResponse
 
 
-import mlAPI.ml_scripts
-import mlAPI.ml
-import mlAPI.etl  
+import ml_scripts
+import ml
+import etl  
 from etl import ETL_FUNCTIONS  
 
 AVAILABLE_MODELS = {

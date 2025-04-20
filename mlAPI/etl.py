@@ -8,11 +8,11 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import MinMaxScaler
 
 import time
-from mlAPI.config import *
-import mlAPI.plots as plots
+from config import *
+import plots as plots
 
 # from config import *
-# import mlAPI.data_plots
+# import data_plots
 import pickle
  
 import pandas as pd

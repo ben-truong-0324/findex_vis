@@ -11,7 +11,7 @@ import torch
 from sklearn.decomposition import FastICA
 from sklearn.decomposition import PCA
 
-from mlAPI.config import *
+from config import *
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.random_projection import GaussianRandomProjection

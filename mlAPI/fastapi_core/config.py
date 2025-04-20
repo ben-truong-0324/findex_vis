@@ -11,7 +11,8 @@ BASE_DIR = Path(__file__).resolve().parent
 
 env_path = BASE_DIR / '.env'
 config = Config(env_path)
-API_KEY: Secret = config("API_KEY", cast=Secret)
+# API_KEY: Secret = config("API_KEY", cast=Secret)
+API_KEY: Secret = config("API_KEY", cast=Secret, default="dev-secret")
 IS_DEBUG: bool = config("IS_DEBUG", cast=bool, default=False)
 
 

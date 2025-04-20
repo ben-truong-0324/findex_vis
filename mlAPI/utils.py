@@ -11,11 +11,11 @@ from tabulate import tabulate
 import pickle
 import random
 from copy import deepcopy
-import mlAPI.hypotheses
+import hypotheses
 # from src.models import *
 # from src.models_reg import *
-from mlAPI.config import *
-import mlAPI.plots as plots
+from config import *
+import plots as plots
 from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
 from sklearn.inspection import permutation_importance
 

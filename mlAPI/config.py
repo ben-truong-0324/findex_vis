@@ -3,9 +3,9 @@ import socket
 # Determine the hostname
 hostname = socket.gethostname()
 # if hostname == "Khais-MacBook-Pro.local" or hostname == "Khais-MBP.attlocal.net":  
-#     from mlAPI.config_mac import *  
+#     from config_mac import *  
 # else:
-#     from mlAPI.config_cuda import * 
+#     from config_cuda import * 
 
 import os
 

@@ -10,7 +10,7 @@
 
 
 from fastapi import APIRouter
-from mlAPI.routes import ml_routes
+from api.routes import ml_routes
 
 api_router = APIRouter()
 api_router.include_router(ml_routes.router, prefix="/ml", tags=["ml"])

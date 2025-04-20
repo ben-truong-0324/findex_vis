@@ -3,10 +3,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
-from mlAPI.config import *
+from config import *
 # from src.models import *
-from mlAPI.utils import *
-from mlAPI.tests import *
+from utils import *
+from tests import *
 
 # class TrainModel():
     

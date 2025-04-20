@@ -8,9 +8,9 @@ from tabulate import tabulate
 
 from sklearn.datasets import make_blobs
 
-import mlAPI.ml_scripts
+import ml_scripts
 
-from mlAPI.config import *
+from config import *
 
 import pandas as pd
 import numpy as np
