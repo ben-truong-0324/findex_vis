@@ -11,7 +11,7 @@ Frontend with D3.js: Interactive visualizations of ML model predictions.
 Containerized Deployment: The entire application is containerized using Docker, ready for minikube dev deployment.
 
 ## Installation and Setup
-Create a free account on [WorldBank.org](https://www.worldbank.org/en/publication/globalfindex/Data). and download the file shown in the picture below 
+Create a free account on [WorldBank.org](https://microdata.worldbank.org/index.php/catalog/4607). and download the file shown in the picture below 
 ![World Bank Data](images/world_bank_data.jpeg)
 
 
