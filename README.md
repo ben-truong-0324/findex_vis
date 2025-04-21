@@ -17,26 +17,39 @@ Create a free account on [WorldBank.org](https://microdata.worldbank.org/index.p
 
 Rename the user_data folder in root to 'data' and 
 Download/copy data into the ./data/ folder and ensure that these files are present:
-```bash
-Before running anything make sure you have docker and minikube installed and working.
+
+# Findex Visualization Dashboard
+
+This project sets up a visualization dashboard that uses World Bank data and a decision tree model to display financial inclusion insights.
+Before starting, ensure the following tools are installed and working:
+
+- [Docker](https://docs.docker.com/get-docker/)
+- [Minikube](https://minikube.sigs.k8s.io/docs/start/)
+
 You can check if they are installed by running these commands:
+```bash 
 docker info
 minikube -version
-
+```
+Then run these commands and follow the steps:
+```bash
 docker ps
 minikube start --driver=docker 
 cd findex_vis
-mv user_data/* data/*
-ls -l 
-findex2021_micro_world_139countries.csv (File from World Bank)
-ft2verbose.json
-world_countries.json
+mv user_data data
+cp findex2021_micro_world_139countries.csv data/
+
+ls -l data (verify these files are present)
+    findex2021_micro_world_139countries.csv (File from World Bank)
+    ft2verbose.json
+    world_countries.json
 
 On Windows, at root folder findex_vis/
 deploy_win.bat
 
 On MacOS, at the root folder findex_vis/
 sh deploy_mac.sh
+```
 
 The script will run and spin up multiple terminals to run the app and also launch the dashboard. 
 
@@ -50,7 +63,7 @@ The dashboard requires these files to be present in the /data in the root level 
 3) metrics_by_cluster.json
 4) metrics_by_countries.json
 
-```
+
 ## Dashboard 
 ![Image of the running dashboard](images/dashboard.jpeg)
 
@@ -65,10 +78,3 @@ kubectl describe pod <pod-name> #see why pod is failing outward
 kubectl logs <pod-name> #see why pod fail inward
 kubectl logs deployment/mlapi -f
 ```
-
-## Important Links and Resources 
-
-Docker : https://docs.docker.com/get-started/
-
-MiniKube: https://minikube.sigs.k8s.io/docs/start/?arch=%2Fmacos%2Farm64%2Fstable%2Fbinary+download
-
