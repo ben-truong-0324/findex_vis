@@ -17,6 +17,7 @@ Containerized Deployment: The entire application is containerized using Docker, 
 4) Fill in the purpose as "Educational Purpose" in the "Application for Access to a Public Use Data" form and press submit 
 5) Download the file shown in the picture below
   ![World Bank Data](images/world_bank_data.jpeg)
+6) A backup link to download the dataset is available at the class [Teams shared folder](https://gtvault.sharepoint.com/:x:/s/CSE6242663/Edc7pw-ekURMlST5YilCRPMBJnK70cfPxsq4Cj6Bc-jHxw?e=1qQZEg) (GA Tech .edu account is required)
 
 # Findex Visualization Dashboard
 
