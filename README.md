@@ -11,12 +11,12 @@ Frontend with D3.js: Interactive visualizations of ML model predictions.
 Containerized Deployment: The entire application is containerized using Docker, ready for minikube dev deployment.
 
 ## Installation and Setup
-Create a free account on [WorldBank.org](https://microdata.worldbank.org/index.php/catalog/4607). and download the file shown in the picture below 
-![World Bank Data](images/world_bank_data.jpeg)
-
-
-Rename the user_data folder in root to 'data' and 
-Download/copy data into the ./data/ folder and ensure that these files are present:
+1) Create a free account on [WorldBank.org](https://microdata.worldbank.org/index.php/catalog/4607) by clicking on register at the top right of the page.
+2) Verify the account creation by clicking on the account creation link sent to the email used to sign up
+3) After verifictation go to this link [WorldBank.org](https://microdata.worldbank.org/index.php/catalog/4607) and select GET MICRODATA 
+4) Fill in the purpose as "Educational Purpose" in the "Application for Access to a Public Use Data" form and press submit 
+5) Download the file shown in the picture below
+  ![World Bank Data](images/world_bank_data.jpeg)
 
 # Findex Visualization Dashboard
 
@@ -37,7 +37,7 @@ docker ps
 minikube start --driver=docker 
 cd findex_vis
 mv user_data data
-cp findex2021_micro_world_139countries.csv data/
+cp findex2021_micro_world_139countries.csv data/ (File from World Bank site)
 
 ls -l data (verify these files are present)
     findex2021_micro_world_139countries.csv (File from World Bank)
